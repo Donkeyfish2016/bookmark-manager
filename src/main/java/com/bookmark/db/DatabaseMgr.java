@@ -27,6 +27,10 @@ public class DatabaseMgr {
     private DatabaseMgr() {
     }
 
+    // 1. 若实例已存在则直接返回
+    // 2. 创建新实例并打开数据库连接
+    // 3. 执行 schema.sql 初始化表结构
+    // 4. 赋值给 INSTANCE
     public static void initialize() {
         if (INSTANCE != null) {
             return;
@@ -41,6 +45,8 @@ public class DatabaseMgr {
         }
     }
 
+    // 1. 校验实例是否已初始化
+    // 2. 返回活跃的数据库连接
     public static Connection getConnection() {
         if (CONNECTION == null) {
             throw new IllegalStateException("DatabaseMgr not initialized. Call initialize() first.");
@@ -48,6 +54,9 @@ public class DatabaseMgr {
         return CONNECTION;
     }
 
+    // 1. 检查连接是否为空或已关闭
+    // 2. 创建新的 SQLite JDBC 连接
+    // 3. 开启自动提交
     @SneakyThrows
     private void openConnection() {
         if (CONNECTION == null || CONNECTION.isClosed()) {
@@ -56,6 +65,8 @@ public class DatabaseMgr {
         }
     }
 
+    // 1. 读取 schema.sql 内容
+    // 2. 执行 SQL 语句（建表、索引）
     private void executeSchema() {
         String sql = readSchema();
         if (sql == null || sql.isBlank()) {
@@ -68,6 +79,8 @@ public class DatabaseMgr {
         }
     }
 
+    // 1. 从类路径加载 /schema.sql 资源
+    // 2. 读取并拼接为完整 SQL 字符串
     private String readSchema() {
         String resourcePath = "/schema.sql";
         try (InputStream is = getClass().getResourceAsStream(resourcePath)) {

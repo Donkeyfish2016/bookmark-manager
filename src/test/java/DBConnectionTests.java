@@ -11,11 +11,13 @@ class DBConnectionTests {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    // 1. 调用 DatabaseMgr.initialize() 初始化数据库连接与表结构
     @BeforeAll
     static void beforeAll() {
         DatabaseMgr.initialize();
     }
 
+    // 1. 获取数据库连接并关闭，释放资源
     @AfterAll
     static void afterAll() {
         try (Connection conn = DatabaseMgr.getConnection()) {
@@ -27,6 +29,11 @@ class DBConnectionTests {
         }
     }
 
+    // 1. 清空 bookmarks 表
+    // 2. 插入 3 条测试记录
+    // 3. 查询并打印所有记录验证插入
+    // 4. 删除 3 条记录
+    // 5. 查询剩余记录数验证删除成功
     @Test
     void testInsertReadDelete() {
         try (Connection conn = DatabaseMgr.getConnection();
@@ -56,7 +63,7 @@ class DBConnectionTests {
                 }
             }
 
-            int deleted = stmt.executeUpdate("DELETE FROM bookmarks WHERE id IN (1, 2, 3)");
+            int deleted = stmt.executeUpdate("DELETE FROM bookmarks");
             assertEquals(3, deleted, "Should delete 3 records");
 
             System.out.println("=== After Delete ===");
