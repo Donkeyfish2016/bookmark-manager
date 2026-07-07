@@ -69,6 +69,9 @@ def main():
     if not prompt_content:
         print("错误: prompt内容为空，请检查commit message")
         sys.exit(1)
+    elif prompt_content.startswith("手动修改："):
+        print("此轮修改为手动修改，不记录到json中。")
+        sys.exit(0)
 
     # 3. 固定信息
     agent_type = "Kilo Code"
