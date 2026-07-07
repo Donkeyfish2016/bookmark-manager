@@ -41,7 +41,6 @@ public class BookmarkService {
         // 1. 校验所有入参非空且非空串
         requireNonBlank(url, "url");
         requireNonBlank(title, "title");
-        requireNonBlank(icon, "icon");
         requireNonBlank(category, "category");
 
         // 2. 构造实体并写入数据库（add_date 取当前时间）

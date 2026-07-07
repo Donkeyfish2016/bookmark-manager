@@ -1,10 +1,10 @@
 CREATE TABLE IF NOT EXISTS bookmarks (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     url         TEXT    NOT NULL,
-    title       TEXT,
+    title       TEXT    NOT NULL,
     icon        TEXT,
-    category    TEXT,
-    add_date    TEXT,
+    category    TEXT    NOT NULL,
+    add_date    TEXT    NOT NULL,
     create_time TEXT    NOT NULL DEFAULT (datetime('now','localtime')),
     update_time TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
 );

@@ -34,10 +34,10 @@ public class AddCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"-t", "--title"}, description = "Bookmark title.", required = true)
     private String title;
 
-    @CommandLine.Option(names = {"-i", "--icon"}, description = "Icon URL or path.", required = true)
+    @CommandLine.Option(names = {"-i", "--icon"}, description = "Icon URL or path.", required = false)
     private String icon;
 
-    @CommandLine.Option(names = {"-c", "--category"}, description = "Category or folder name.", required = true)
+    @CommandLine.Option(names = {"-c", "--category"}, description = "Category or folder name.", defaultValue = "default", required = false)
     private String category;
 
     /**

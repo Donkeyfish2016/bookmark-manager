@@ -1,5 +1,4 @@
 package com.bookmark.cli;
-
 import picocli.CommandLine;
 
 import java.util.concurrent.Callable;
@@ -29,4 +28,5 @@ public class MainCommand implements Callable<Integer> {
         CommandLine.usage(this, System.out);
         return 0;
     }
+  
 }
