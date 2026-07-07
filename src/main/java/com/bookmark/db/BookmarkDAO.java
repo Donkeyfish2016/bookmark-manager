@@ -192,22 +192,27 @@ public class BookmarkDAO {
      * 将 update_time 刷新为当前时刻，可用于标记书签被访问/同步。
      * </p>
      *
-     * @param id 书签主键
+     * @param bookmark 书签实体（包含主键 id）
      * @return 受影响行数（1 表示成功，0 表示未找到）
      */
-    public int updateById(int id) {
-        // 1. 将 update_time 刷新为当前时刻
-        String sql = "UPDATE bookmarks SET update_time = ? WHERE id = ?";
+    public int update(Bookmark bookmark) {
+        // 1. 更新书签除了主键之外的信息
+        String sql = "UPDATE bookmarks SET url = ?, title = ?, icon = ?, category = ?, add_date = ?, update_time = ? WHERE id = ?";
 
-        // 2. 返回受影响行数
+        // 2. 执行更新并返回受影响行数
         try (Connection conn = DatabaseMgr.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, LocalDateTime.now().format(FORMATTER));
-            ps.setInt(2, id);
+            ps.setString(1, bookmark.getUrl());
+            ps.setString(2, bookmark.getTitle());
+            ps.setString(3, bookmark.getIcon());
+            ps.setString(4, bookmark.getCategory());
+            ps.setString(5, toText(bookmark.getAddDate()));
+            ps.setString(6, LocalDateTime.now().format(FORMATTER));
+            ps.setInt(7, bookmark.getId());
             return ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to update bookmark by id: " + id, e);
+            throw new RuntimeException("Failed to update bookmark by id: " + bookmark.getId(), e);
         }
     }
 

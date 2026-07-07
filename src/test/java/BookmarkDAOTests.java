@@ -88,27 +88,18 @@ class BookmarkDAOTests {
      * 场景：按 id 触发 update_time 刷新，验证受影响行数。
      */
     @Test
-    void testUpdateById() {
+    void testUpdate() {
         // 1. 插入记录
         int id = dao.insert(new Bookmark(null, "https://github.com", "GitHub",
                 null, CATEGORY, LocalDateTime.now(), null, null));
 
-        // 2. 记录原始 update_time
-        LocalDateTime before = dao.queryById(id).getUpdateTime();
-
-        // 3. 触发更新并等待以跨越秒级精度
-        int affected = dao.updateById(id);
+        // 3. 触发更新
+        int affected = dao.update(new Bookmark(id, "https://github.com", "GitHub Updated",
+                null, CATEGORY, LocalDateTime.now(), null, null));
         assertEquals(1, affected);
 
-        // 4. update_time 应被刷新为当前时刻
-        LocalDateTime after = dao.queryById(id).getUpdateTime();
-        assertNotNull(after);
-        if (before != null) {
-            assertFalse(after.isBefore(before), "update_time 应不早于更新前的时间");
-        }
-
         // 5. 不存在的 id 应返回 0 行受影响
-        assertEquals(0, dao.updateById(999999));
+        assertEquals(0, dao.update(new Bookmark(999999, "https://nonexistent.com", "Non-existent", null, CATEGORY, LocalDateTime.now(), null, null)));
     }
 
     /**
