@@ -46,12 +46,23 @@ public class DatabaseMgr {
     }
 
     // 1. 校验实例是否已初始化
-    // 2. 返回活跃的数据库连接
+    // 2. 若连接已关闭则自动重连，保证返回活跃连接
+    // 3. 返回活跃的数据库连接
     public static Connection getConnection() {
-        if (CONNECTION == null) {
+        if (INSTANCE == null) {
             throw new IllegalStateException("DatabaseMgr not initialized. Call initialize() first.");
         }
+        INSTANCE.ensureOpen();
         return CONNECTION;
+    }
+
+    // 1. 检查连接是否为空或已关闭
+    // 2. 若是则重新打开连接，确保调用方始终拿到可用连接
+    @SneakyThrows
+    private void ensureOpen() {
+        if (CONNECTION == null || CONNECTION.isClosed()) {
+            openConnection();
+        }
     }
 
     // 1. 检查连接是否为空或已关闭
