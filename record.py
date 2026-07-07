@@ -40,16 +40,9 @@ def get_latest_commit_info():
 def extract_prompt(commit_message):
     """
     从 commit message 中提取 prompt_content。
-    规则：跳过第一行(标题)，将剩余所有行合并为 prompt。
-    如果只有一行，则用整行作为 prompt。
+    规则：将所有行合并为 prompt。
     """
-    lines = commit_message.strip().split('\n')
-    if len(lines) == 1:
-        return lines[0]   # 没有 body，标题即 prompt
-    else:
-        # 去除可能存在的空行，将 body 连接起来
-        body_lines = [l.strip() for l in lines[1:] if l.strip()]
-        return ' '.join(body_lines)
+    return commit_message.strip()
     
 def clean_diff(raw_diff):
     """
