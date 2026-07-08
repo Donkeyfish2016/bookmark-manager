@@ -1,9 +1,9 @@
 import com.bookmark.db.BookmarkDAO;
 import com.bookmark.db.DatabaseMgr;
 import com.bookmark.html.HtmlBookmarkParser;
+import com.bookmark.model.BatchResult;
 import com.bookmark.model.Bookmark;
 import com.bookmark.service.BookmarkService;
-import com.bookmark.service.BookmarkService.ImportResult;
 
 import org.junit.jupiter.api.*;
 
@@ -224,7 +224,7 @@ class BookmarkServiceTests {
     @Test
     void testImportFromHtml() {
         // 1. 导入基准示例文件
-        ImportResult imported = service.importFromHtml("src/main/java/com/bookmark/html/example.html");
+        BatchResult imported = service.importFromHtml("src/main/java/com/bookmark/html/example.html");
 
         // 2. 12 条有效书签应全部成功导入，且无失败
         assertEquals(12, imported.getSuccess());

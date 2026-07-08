@@ -3,6 +3,7 @@ package com.bookmark.service;
 import com.bookmark.db.BookmarkDAO;
 import com.bookmark.html.HtmlBookmarkParser;
 import com.bookmark.html.HtmlBookmarkWriter;
+import com.bookmark.model.BatchResult;
 import com.bookmark.model.Bookmark;
 
 import java.io.File;
@@ -142,7 +143,7 @@ public class BookmarkService {
      * @param filePath 书签 HTML 文件路径
      * @return 导入结果（成功数与失败数）
      */
-    public ImportResult importFromHtml(String filePath) {
+    public BatchResult importFromHtml(String filePath) {
         // 1. 校验文件路径非空
         requireNonBlank(filePath, "filePath");
 
@@ -150,8 +151,8 @@ public class BookmarkService {
         List<Bookmark> parsed = parseHtml(new File(filePath));
 
         // 3. 批量插入（跳过约束冲突记录），返回成功/失败统计
-        BookmarkDAO.BatchResult result = bookmarkDAO.batchInsertSkipErrors(parsed);
-        return new ImportResult(result.success, result.failures);
+        BatchResult result = bookmarkDAO.batchInsertSkipErrors(parsed);
+        return result;
     }
 
     /**
@@ -172,25 +173,6 @@ public class BookmarkService {
             throw new RuntimeException("Failed to export bookmarks to: " + outputPath, e);
         }
         return all.size();
-    }
-
-    /** 导入结果：成功条数与失败（被跳过）条数。 */
-    public static class ImportResult {
-        private final int success;
-        private final int failures;
-
-        public ImportResult(int success, int failures) {
-            this.success = success;
-            this.failures = failures;
-        }
-
-        public int getSuccess() {
-            return success;
-        }
-
-        public int getFailures() {
-            return failures;
-        }
     }
 
     /** 调用 HTML 解析器，将 IO 异常包装为运行时异常。 */

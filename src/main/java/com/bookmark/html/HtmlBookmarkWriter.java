@@ -46,18 +46,41 @@ public class HtmlBookmarkWriter {
             parent.mkdirs();
         }
 
-        // 2. 构建以默认收藏夹栏为根的文件夹树
-        FolderNode root = new FolderNode(DEFAULT_ROOT_FOLDER, true);
-        if (bookmarks != null) {
-            for (Bookmark bookmark : bookmarks) {
-                addBookmark(root, bookmark);
+        // 2. 构建文件夹树
+        // FolderNode root = new FolderNode(DEFAULT_ROOT_FOLDER, true);
+        // if (bookmarks != null) {
+        //     for (Bookmark bookmark : bookmarks) {
+        //         addBookmark(root, bookmark);
+        //     }
+        // }
+        // 2.1 顶级文件夹映射：文件夹名 -> FolderNode
+        Map<String, FolderNode> topFolders = new LinkedHashMap<>();
+        FolderNode defaultFolder = new FolderNode(DEFAULT_ROOT_FOLDER, false);
+        // 2.2 遍历书签列表，填充顶级文件夹映射
+        for (Bookmark bookmark : bookmarks) {
+            String category = bookmark.getCategory();
+            if (category == null || category.isBlank()) {
+                defaultFolder.getBookmarks().add(bookmark);
+            } else {
+                String[] parts = category.split("/");
+                String topFolderName = parts[0];
+                FolderNode topFolder = topFolders.computeIfAbsent(topFolderName, key -> new FolderNode(key, false));
+                // 递归添加书签到对应的文件夹节点
+                addBookmark(topFolder, bookmark);
             }
+        }
+        // 2.3 处理默认
+        if (!defaultFolder.getBookmarks().isEmpty()) {
+            topFolders.put(DEFAULT_ROOT_FOLDER, defaultFolder);
         }
 
         // 3. 生成 HTML 内容并写入文件
         StringBuilder builder = new StringBuilder();
         builder.append(HEADER);
-        appendFolder(builder, root, 0);
+        for (FolderNode root : topFolders.values()) {
+            boolean isToolbar = root.getName().equals("收藏夹栏");
+            appendFolder(builder, root, 0, isToolbar);
+        }
         builder.append("</DL><p>\n");
         Files.writeString(outputFile.toPath(), builder.toString(), StandardCharsets.UTF_8);
     }
@@ -78,7 +101,8 @@ public class HtmlBookmarkWriter {
 
         String[] parts = category.split("/");
         FolderNode current = root;
-        for (String part : parts) {
+        for (int i = 1; i < parts.length; i++) { // 从第二部分开始，因为第一部分已经是顶级文件夹
+            String part = parts[i];
             if (part == null || part.isBlank()) {
                 continue;
             }
@@ -90,13 +114,13 @@ public class HtmlBookmarkWriter {
     /**
      * 递归把文件夹树转成 Netscape Bookmark HTML 片段。
      */
-    private void appendFolder(StringBuilder builder, FolderNode folder, int depth) {
+    private void appendFolder(StringBuilder builder, FolderNode folder, int depth, boolean isToolbar) {
         String indent = "    ".repeat(depth);
         builder.append(indent).append("<DT><H3")
                 .append(" ADD_DATE=\"").append(formatTimestamp(System.currentTimeMillis() / 1000L))
                 .append("\" LAST_MODIFIED=\"").append(formatTimestamp(System.currentTimeMillis() / 1000L))
                 .append("\"");
-        if (folder.isRoot()) {
+        if (isToolbar) {
             builder.append(" PERSONAL_TOOLBAR_FOLDER=\"true\"");
         }
         builder.append(">")
@@ -106,7 +130,7 @@ public class HtmlBookmarkWriter {
                 .append("<DL><p>\n");
 
         for (FolderNode childFolder : folder.getChildren().values()) {
-            appendFolder(builder, childFolder, depth + 1);
+            appendFolder(builder, childFolder, depth + 1, false);
         }
         for (Bookmark bookmark : folder.getBookmarks()) {
             appendBookmark(builder, bookmark, depth + 1);

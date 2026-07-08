@@ -1,5 +1,6 @@
 package com.bookmark.db;
 
+import com.bookmark.model.BatchResult;
 import com.bookmark.model.Bookmark;
 
 import java.sql.*;
@@ -245,61 +246,6 @@ public class BookmarkDAO {
     }
 
     /**
-     * 批量插入多条书签，整个操作在一个数据库事务内完成，
-     * 任一条失败则整体回滚。
-     *
-     * @param list 待插入的书签集合
-     */
-    public void batchInsert(List<Bookmark> list) {
-        if (list == null || list.isEmpty()) {
-            return;
-        }
-
-        String sql = "INSERT INTO bookmarks (url, title, icon, category, add_date) VALUES (?, ?, ?, ?, ?)";
-        Connection conn = DatabaseMgr.getConnection();
-        boolean originalAutoCommit = true;
-
-        // 1. 关闭自动提交，开启手动事务
-        try {
-            originalAutoCommit = conn.getAutoCommit();
-            conn.setAutoCommit(false);
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to begin batch transaction", e);
-        }
-
-        // 2. 逐条加入批处理
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            for (Bookmark b : list) {
-                ps.setString(1, b.getUrl());
-                ps.setString(2, b.getTitle());
-                ps.setString(3, b.getIcon());
-                ps.setString(4, b.getCategory());
-                ps.setString(5, toText(b.getAddDate()));
-                ps.addBatch();
-            }
-
-            // 3. 一次性提交所有插入
-            ps.executeBatch();
-            conn.commit();
-        } catch (SQLException e) {
-            // 4. 发生异常时回滚，保证数据一致性
-            try {
-                conn.rollback();
-            } catch (SQLException rollbackEx) {
-                throw new RuntimeException("Failed to rollback batch insert", rollbackEx);
-            }
-            throw new RuntimeException("Failed to batch insert bookmarks", e);
-        } finally {
-            // 5. 恢复原有的自动提交模式
-            try {
-                conn.setAutoCommit(originalAutoCommit);
-            } catch (SQLException e) {
-                throw new RuntimeException("Failed to restore auto-commit mode", e);
-            }
-        }
-    }
-
-    /**
      * 批量插入并跳过约束冲突的记录：在单个事务内逐条执行，
      * 遇到数据库约束违规时跳过该记录并继续，最终提交所有成功记录。
      *
@@ -375,17 +321,6 @@ public class BookmarkDAO {
             }
         }
         return new BatchResult(success, failures);
-    }
-
-    /** 批量插入结果：成功数与因约束冲突被跳过的数量。 */
-    public static class BatchResult {
-        public final int success;
-        public final int failures;
-
-        public BatchResult(int success, int failures) {
-            this.success = success;
-            this.failures = failures;
-        }
     }
 
     /** 判断异常链中是否包含数据库约束冲突（SQLite: SQLITE_CONSTRAINT=19）。 */
