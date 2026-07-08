@@ -2,3 +2,4 @@ target/
 .vscode/
 *.db
 .github/
+output_test.html
