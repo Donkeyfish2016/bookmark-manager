@@ -1,6 +1,7 @@
 package com.bookmark;
 
 import com.bookmark.cli.AddCommand;
+import com.bookmark.cli.DeleteCommand;
 import com.bookmark.cli.MainCommand;
 import com.bookmark.db.BookmarkDAO;
 import com.bookmark.db.DatabaseMgr;
@@ -23,9 +24,10 @@ public class App {
         // 2. 组装服务层（DAO -> Service）
         BookmarkService service = new BookmarkService(new BookmarkDAO());
 
-        // 3. 构建命令树：根命令 + add 子命令（注入 service）
+        // 3. 构建命令树：根命令 + 各子命令（注入 service）
         CommandLine commandLine = new CommandLine(new MainCommand())
-                .addSubcommand("add", new AddCommand(service));
+                .addSubcommand("add", new AddCommand(service))
+                .addSubcommand("delete", new DeleteCommand(service));
 
         // 4. 解析参数并执行，返回退出码
         int exitCode = commandLine.execute(args);
