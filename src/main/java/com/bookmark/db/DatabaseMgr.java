@@ -83,8 +83,15 @@ public class DatabaseMgr {
         if (sql == null || sql.isBlank()) {
             return;
         }
+        // 按分号拆分，并移除每条语句首尾空白
+        String[] statements = sql.split(";");
         try (Statement stmt = CONNECTION.createStatement()) {
-            stmt.execute(sql);
+            for (String statement : statements) {
+                String trimmed = statement.trim();
+                if (!trimmed.isEmpty()) {
+                    stmt.execute(trimmed);
+                }
+            }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to execute schema.sql", e);
         }

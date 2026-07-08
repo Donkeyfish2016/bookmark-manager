@@ -17,7 +17,6 @@ CREATE TABLE IF NOT EXISTS bookmarks (
     category    TEXT    NOT NULL,
     add_date    TEXT    NOT NULL,
     create_time TEXT    NOT NULL DEFAULT (datetime('now','localtime')),
-    update_time TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
     update_time TEXT    NOT NULL DEFAULT (datetime('now','localtime')),
     folder_id   INTEGER
 );
