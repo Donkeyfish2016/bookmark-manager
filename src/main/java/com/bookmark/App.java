@@ -2,7 +2,9 @@ package com.bookmark;
 
 import com.bookmark.cli.AddCommand;
 import com.bookmark.cli.DeleteCommand;
+import com.bookmark.cli.ListCommand;
 import com.bookmark.cli.MainCommand;
+import com.bookmark.cli.SearchCommand;
 import com.bookmark.db.BookmarkDAO;
 import com.bookmark.db.DatabaseMgr;
 import com.bookmark.service.BookmarkService;
@@ -27,7 +29,9 @@ public class App {
         // 3. 构建命令树：根命令 + 各子命令（注入 service）
         CommandLine commandLine = new CommandLine(new MainCommand())
                 .addSubcommand("add", new AddCommand(service))
-                .addSubcommand("delete", new DeleteCommand(service));
+                .addSubcommand("delete", new DeleteCommand(service))
+                .addSubcommand("list", new ListCommand(service))
+                .addSubcommand("search", new SearchCommand(service));
 
         // 4. 解析参数并执行，返回退出码
         int exitCode = commandLine.execute(args);
