@@ -17,30 +17,21 @@ APP_CLASS="com.bookmark.App"
 # 2. 构建运行所需的 classpath（编译产物 + Maven 依赖）
 echo "==> Building classpath..."
 if [ ! -d "target/classes" ]; then
-  mvn -o compile -q -DskipTests
+  mvn compile -q -DskipTests
 fi
-CP_RAW="$(mvn -o dependency:build-classpath -q 2>/dev/null | tr -d '\r')"
-# 根据 Maven 输出的路径分隔符（Windows 为 ';'，类 Unix 为 ':'）拼接 target/classes，
-# 保证在 Git Bash(Windows) 与 Linux/CI 环境下均可用
-if [[ "$CP_RAW" == *";"* ]]; then SEP=";"; else SEP=":"; fi
-CP="target/classes${SEP}${CP_RAW}"
 
 # 3. 统一封装：调用书签 CLI（java -cp ... com.bookmark.App <args>）
 run() {
-  java -cp "$CP" "$APP_CLASS" "$@"
+  local args="$*"
+  mvn exec:java -Dexec.mainClass="$APP_CLASS" -Dexec.args="$args" -q
 }
-
-# 4. 初始化：清空数据库，保证测试从干净状态开始
-#    bookmarks.db 为 .gitignore 文件，删除后由 DatabaseMgr 自动重建空表
-echo "==> [Init] Clearing database..."
-rm -f bookmarks.db
 
 # [1/6] 新增多条书签，并捕获自动生成的主键 id
 echo ""
 echo "[1/6] Adding bookmarks"
-ID1=$(run add --url "https://python.org"     --title "Python Official Site" --icon "py.png"  --category "Dev"    | sed -n 's/.*id=\([0-9]*\).*/\1/p')
-ID2=$(run add --url "https://docs.python.org" --title "Python Docs"          --icon "doc.png" --category "Dev"    | sed -n 's/.*id=\([0-9]*\).*/\1/p')
-ID3=$(run add --url "https://github.com"      --title "GitHub"               --icon "gh.png"  --category "Social" | sed -n 's/.*id=\([0-9]*\).*/\1/p')
+ID1=$(run add --url "https://python.org"     --title \"Python Official Site\" --icon "py.png"  --category "Dev"    | sed -n 's/.*id=\([0-9]*\).*/\1/p')
+ID2=$(run add --url "https://docs.python.org" --title \"Python Docs\"          --icon "doc.png" --category "Dev"    | sed -n 's/.*id=\([0-9]*\).*/\1/p')
+ID3=$(run add --url "https://github.com"      --title \"GitHub\"               --icon "gh.png"  --category "Social" | sed -n 's/.*id=\([0-9]*\).*/\1/p')
 echo "Captured ids: ID1=$ID1 ID2=$ID2 ID3=$ID3"
 
 # [2/6] 列出全部书签
@@ -61,8 +52,8 @@ run search --keyword python
 # [5/6] 更新多条记录（分别更新 title 与 category，未提供字段保持不变）
 echo ""
 echo "[5/6] Updating entries (id=$ID1 title, id=$ID2 category)"
-run update --id "$ID1" --title "Python Official (updated)"
-run update --id "$ID2" --category "Dev/Python"
+run update --id "$ID1" --title \"Python Official updated\"
+run update --id "$ID2" --category \"Dev/Python\"
 
 # [6/6] 删除指定记录
 echo ""
