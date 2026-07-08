@@ -306,9 +306,9 @@ public class BookmarkDAO {
      * @param list 待插入的书签集合
      * @return 成功插入的书签数量
      */
-    public int batchInsertSkipErrors(List<Bookmark> list) {
+    public BatchResult batchInsertSkipErrors(List<Bookmark> list) {
         if (list == null || list.isEmpty()) {
-            return 0;
+            return new BatchResult(0, 0);
         }
 
         String sql = "INSERT INTO bookmarks (url, title, icon, category, add_date) VALUES (?, ?, ?, ?, ?)";
@@ -374,7 +374,18 @@ public class BookmarkDAO {
                 throw new RuntimeException("Failed to restore auto-commit mode", e);
             }
         }
-        return success;
+        return new BatchResult(success, failures);
+    }
+
+    /** 批量插入结果：成功数与因约束冲突被跳过的数量。 */
+    public static class BatchResult {
+        public final int success;
+        public final int failures;
+
+        public BatchResult(int success, int failures) {
+            this.success = success;
+            this.failures = failures;
+        }
     }
 
     /** 判断异常链中是否包含数据库约束冲突（SQLite: SQLITE_CONSTRAINT=19）。 */

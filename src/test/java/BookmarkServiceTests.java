@@ -3,6 +3,7 @@ import com.bookmark.db.DatabaseMgr;
 import com.bookmark.html.HtmlBookmarkParser;
 import com.bookmark.model.Bookmark;
 import com.bookmark.service.BookmarkService;
+import com.bookmark.service.BookmarkService.ImportResult;
 
 import org.junit.jupiter.api.*;
 
@@ -53,7 +54,7 @@ class BookmarkServiceTests {
         clearCategory("学习资源");
         clearCategory("编程开发/前端");
         clearCategory("编程开发/后端");
-        new File("output_export_test.html").delete();
+        // new File("output_test.html").delete();
     }
 
     // 1. 所有用例结束后释放连接
@@ -223,10 +224,11 @@ class BookmarkServiceTests {
     @Test
     void testImportFromHtml() {
         // 1. 导入基准示例文件
-        int imported = service.importFromHtml("src/main/java/com/bookmark/html/example.html");
+        ImportResult imported = service.importFromHtml("src/main/java/com/bookmark/html/example.html");
 
-        // 2. 12 条有效书签应全部成功导入
-        assertEquals(12, imported);
+        // 2. 12 条有效书签应全部成功导入，且无失败
+        assertEquals(12, imported.getSuccess());
+        assertEquals(0, imported.getFailures());
 
         // 3. 各分类记录数应与示例一致
         assertEquals(4, service.list("收藏夹栏", 1, 100).size());
@@ -240,7 +242,7 @@ class BookmarkServiceTests {
      */
     @Test
     void testExportToHtml() throws Exception {
-        File out = new File("output_export_test.html");
+        File out = new File("output_test.html");
         if (out.exists()) {
             assertTrue(out.delete());
         }
@@ -249,7 +251,7 @@ class BookmarkServiceTests {
         service.add("https://export-verify.com", "ExportVerify", "i.png", CATEGORY);
 
         // 2. 导出全部书签到项目根目录
-        service.exportToHtml("output_export_test.html");
+        service.exportToHtml("output_test.html");
 
         // 3. 文件应生成且以标准 Netscape 头部开头
         assertTrue(out.exists());

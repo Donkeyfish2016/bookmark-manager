@@ -2,6 +2,8 @@ package com.bookmark;
 
 import com.bookmark.cli.AddCommand;
 import com.bookmark.cli.DeleteCommand;
+import com.bookmark.cli.ExportCommand;
+import com.bookmark.cli.ImportCommand;
 import com.bookmark.cli.ListCommand;
 import com.bookmark.cli.MainCommand;
 import com.bookmark.cli.SearchCommand;
@@ -33,7 +35,9 @@ public class App {
                 .addSubcommand("delete", new DeleteCommand(service))
                 .addSubcommand("list", new ListCommand(service))
                 .addSubcommand("search", new SearchCommand(service))
-                .addSubcommand("update", new UpdateCommand(service));
+                .addSubcommand("update", new UpdateCommand(service))
+                .addSubcommand("import", new ImportCommand(service))
+                .addSubcommand("export", new ExportCommand(service));
 
         // 4. 解析参数并执行，返回退出码
         int exitCode = commandLine.execute(args);

@@ -60,5 +60,15 @@ echo ""
 echo "[6/6] Deleting entry id=$ID3"
 run delete --id "$ID3"
 
+# [1/2] 导入命令测试：从示例 HTML 文件导入书签
+echo ""
+echo "[1/2] 导入命令测试"
+run import --file src/main/java/com/bookmark/html/example.html
+
+# [2/2] 导出命令测试：将全部书签导出到指定 HTML 文件
+echo ""
+echo "[2/2] 导出命令测试"
+run export --output cli_export_test.html
+
 echo ""
 echo "==> All CRUD tests completed."

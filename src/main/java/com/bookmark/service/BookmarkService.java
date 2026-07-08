@@ -137,37 +137,59 @@ public class BookmarkService {
 
     /**
      * 从 Edge 书签 HTML 文件导入书签。
-     * 解析后批量插入，约束冲突的记录会被跳过，返回成功插入的数量。
+     * 解析后批量插入，约束冲突的记录会被跳过。
      *
      * @param filePath 书签 HTML 文件路径
-     * @return 成功导入的书签数量
+     * @return 导入结果（成功数与失败数）
      */
-    public int importFromHtml(String filePath) {
+    public ImportResult importFromHtml(String filePath) {
         // 1. 校验文件路径非空
         requireNonBlank(filePath, "filePath");
 
         // 2. 解析 HTML 得到书签列表
         List<Bookmark> parsed = parseHtml(new File(filePath));
 
-        // 3. 批量插入（跳过约束冲突记录）
-        return bookmarkDAO.batchInsertSkipErrors(parsed);
+        // 3. 批量插入（跳过约束冲突记录），返回成功/失败统计
+        BookmarkDAO.BatchResult result = bookmarkDAO.batchInsertSkipErrors(parsed);
+        return new ImportResult(result.success, result.failures);
     }
 
     /**
      * 将当前所有书签导出为 Edge 书签 HTML 文件。
      *
      * @param outputPath 输出 HTML 文件路径
+     * @return 导出的书签数量
      */
-    public void exportToHtml(String outputPath) {
+    public int exportToHtml(String outputPath) {
         // 1. 校验输出路径非空
         requireNonBlank(outputPath, "outputPath");
 
-        // 2. 读取全部书签并交给 HTML 写出器
+        // 2. 读取全部书签并交给 HTML 写出器，返回导出数量
         List<Bookmark> all = listAll();
         try {
             htmlWriter.write(all, new File(outputPath));
         } catch (IOException e) {
             throw new RuntimeException("Failed to export bookmarks to: " + outputPath, e);
+        }
+        return all.size();
+    }
+
+    /** 导入结果：成功条数与失败（被跳过）条数。 */
+    public static class ImportResult {
+        private final int success;
+        private final int failures;
+
+        public ImportResult(int success, int failures) {
+            this.success = success;
+            this.failures = failures;
+        }
+
+        public int getSuccess() {
+            return success;
+        }
+
+        public int getFailures() {
+            return failures;
         }
     }
 
