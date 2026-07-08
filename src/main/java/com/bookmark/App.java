@@ -5,6 +5,7 @@ import com.bookmark.cli.DeleteCommand;
 import com.bookmark.cli.ListCommand;
 import com.bookmark.cli.MainCommand;
 import com.bookmark.cli.SearchCommand;
+import com.bookmark.cli.UpdateCommand;
 import com.bookmark.db.BookmarkDAO;
 import com.bookmark.db.DatabaseMgr;
 import com.bookmark.service.BookmarkService;
@@ -31,7 +32,8 @@ public class App {
                 .addSubcommand("add", new AddCommand(service))
                 .addSubcommand("delete", new DeleteCommand(service))
                 .addSubcommand("list", new ListCommand(service))
-                .addSubcommand("search", new SearchCommand(service));
+                .addSubcommand("search", new SearchCommand(service))
+                .addSubcommand("update", new UpdateCommand(service));
 
         // 4. 解析参数并执行，返回退出码
         int exitCode = commandLine.execute(args);

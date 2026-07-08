@@ -89,6 +89,19 @@ public class BookmarkService {
     }
 
     /**
+     * 根据主键查询单条书签。
+     *
+     * @return 命中的书签，未找到时返回 {@code null}
+     */
+    public Bookmark getById(Integer id) {
+        // 1. 校验 id 非空
+        requireNonNull(id, "id");
+
+        // 2. 委托 DAO 按主键查询
+        return bookmarkDAO.queryById(id);
+    }
+
+    /**
      * 更新指定书签的全部业务字段。
      *
      * @return 更新成功返回 {@code true}，未命中返回 {@code false}
@@ -105,6 +118,8 @@ public class BookmarkService {
         Bookmark bookmark = new Bookmark(id, url, title, icon, category, null, null, null);
         return bookmarkDAO.update(bookmark) > 0;
     }
+
+    // TODO: 添加count计数的业务
 
     // ---- 校验辅助方法 ----
 
