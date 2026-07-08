@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * @since 2026-7-7
  */
 public class DatabaseMgr {
-    private static final String URL = "jdbc:sqlite:bookmarks.db";
+    private static final String URL = "jdbc:sqlite:bookmarkmgr.db";
     private static volatile DatabaseMgr INSTANCE;
     private static volatile Connection CONNECTION;
 
