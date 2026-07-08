@@ -188,6 +188,7 @@ public class HtmlBookmarkWriter {
     /**
      * 代表一个文件夹节点，维护子文件夹与直接书签。
      */
+    // TODO: 目录节点重命名，可能需要重写设计表结构
     private static class FolderNode {
         private final String name;
         private final boolean root;

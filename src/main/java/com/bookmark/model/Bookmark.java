@@ -21,7 +21,7 @@ public class Bookmark {
     private String title;
     /** 网站图标 URL 或路径，可为空 */
     private String icon;
-    /** 分类或文件夹名称，多层文件夹以 '/' 分隔 */
+    /** 分类或文件夹名称，多层文件夹以 '/' 分隔，冗余字段 */
     private String category;
     /** 从浏览器书签 HTML 解析出的添加时间 */
     private LocalDateTime addDate;
@@ -29,4 +29,6 @@ public class Bookmark {
     private LocalDateTime createTime;
     /** 更新时间 */
     private LocalDateTime updateTime;
+    /** 所在文件夹id */
+    // private Integer folderId;
 }

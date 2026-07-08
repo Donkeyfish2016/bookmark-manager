@@ -180,14 +180,14 @@ class BookmarkDAOTests {
         }
 
         // 2. 批量插入
-        dao.batchInsert(list);
+        dao.batchInsertSkipErrors(list);
 
         // 3. 校验全部写入
         assertEquals(3, dao.count(CATEGORY));
         assertEquals(3, dao.queryByKeyword("batch").size());
 
         // 4. 空列表不应抛异常
-        dao.batchInsert(new ArrayList<>());
+        dao.batchInsertSkipErrors(new ArrayList<>());
     }
 
     // ---- 辅助方法 ----

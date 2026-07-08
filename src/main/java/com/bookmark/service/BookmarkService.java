@@ -127,7 +127,14 @@ public class BookmarkService {
         return bookmarkDAO.update(bookmark) > 0;
     }
 
-    // TODO: 添加count计数的业务
+    /**
+     * 统计指定分类下的书签数量。
+     *
+     * @return 书签数量
+     */
+    public long count(String category) {
+        return bookmarkDAO.count(category);
+    }
 
     /**
      * 查询全部书签（不分页、不分类过滤），用于导出等场景。
