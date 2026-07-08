@@ -48,7 +48,9 @@ public class BookmarkDAO {
             ps.setString(2, bookmark.getTitle());
             ps.setString(3, bookmark.getIcon());
             ps.setString(4, bookmark.getCategory());
-            ps.setString(5, toText(bookmark.getAddDate()));
+            // add_date 列非空：未提供时默认取当前时间
+            LocalDateTime addDate = bookmark.getAddDate() != null ? bookmark.getAddDate() : LocalDateTime.now();
+            ps.setString(5, toText(addDate));
 
             ps.executeUpdate();
 

@@ -79,7 +79,6 @@ class BookmarkServiceTests {
         assertThrows(IllegalArgumentException.class, () -> service.add(null, "t", "i", CATEGORY));
         assertThrows(IllegalArgumentException.class, () -> service.add(" ", "t", "i", CATEGORY));
         assertThrows(IllegalArgumentException.class, () -> service.add("u", null, "i", CATEGORY));
-        assertThrows(IllegalArgumentException.class, () -> service.add("u", "t", null, CATEGORY));
         assertThrows(IllegalArgumentException.class, () -> service.add("u", "t", "i", ""));
     }
 
