@@ -300,6 +300,103 @@ public class BookmarkDAO {
     }
 
     /**
+     * 批量插入并跳过约束冲突的记录：在单个事务内逐条执行，
+     * 遇到数据库约束违规时跳过该记录并继续，最终提交所有成功记录。
+     *
+     * @param list 待插入的书签集合
+     * @return 成功插入的书签数量
+     */
+    public int batchInsertSkipErrors(List<Bookmark> list) {
+        if (list == null || list.isEmpty()) {
+            return 0;
+        }
+
+        String sql = "INSERT INTO bookmarks (url, title, icon, category, add_date) VALUES (?, ?, ?, ?, ?)";
+        Connection conn = DatabaseMgr.getConnection();
+        boolean originalAutoCommit = true;
+
+        // 1. 关闭自动提交，开启手动事务
+        try {
+            originalAutoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to begin batch transaction", e);
+        }
+
+        int success = 0;
+        int failures = 0;
+
+        // 2. 逐条执行，单条约束冲突时跳过并继续
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (Bookmark b : list) {
+                try {
+                    ps.setString(1, b.getUrl());
+                    ps.setString(2, b.getTitle());
+                    ps.setString(3, b.getIcon());
+                    ps.setString(4, b.getCategory());
+                    // add_date 列非空：未提供时默认取当前时间
+                    LocalDateTime addDate = b.getAddDate() != null ? b.getAddDate() : LocalDateTime.now();
+                    ps.setString(5, toText(addDate));
+
+                    if (ps.executeUpdate() > 0) {
+                        success++;
+                    }
+                } catch (SQLException e) {
+                    if (isConstraintViolation(e)) {
+                        // 3. 约束冲突：跳过该记录并统计失败数
+                        failures++;
+                    } else {
+                        // 4. 非约束类错误：回滚并向上抛出
+                        try {
+                            conn.rollback();
+                        } catch (SQLException rollbackEx) {
+                            throw new RuntimeException("Failed to rollback batch insert", rollbackEx);
+                        }
+                        throw new RuntimeException("Failed to batch insert bookmarks", e);
+                    }
+                }
+            }
+            // 5. 提交所有成功记录
+            conn.commit();
+        } catch (SQLException e) {
+            // 6. 事务提交阶段异常时回滚
+            try {
+                conn.rollback();
+            } catch (SQLException rollbackEx) {
+                throw new RuntimeException("Failed to rollback batch insert", rollbackEx);
+            }
+            throw new RuntimeException("Failed to batch insert bookmarks", e);
+        } finally {
+            // 7. 恢复原有的自动提交模式
+            try {
+                conn.setAutoCommit(originalAutoCommit);
+            } catch (SQLException e) {
+                throw new RuntimeException("Failed to restore auto-commit mode", e);
+            }
+        }
+        return success;
+    }
+
+    /** 判断异常链中是否包含数据库约束冲突（SQLite: SQLITE_CONSTRAINT=19）。 */
+    private boolean isConstraintViolation(SQLException e) {
+        Throwable t = e;
+        while (t != null) {
+            if (t instanceof SQLIntegrityConstraintViolationException) {
+                return true;
+            }
+            if (t instanceof SQLException && ((SQLException) t).getErrorCode() == 19) {
+                return true;
+            }
+            String msg = t.getMessage();
+            if (msg != null && msg.toLowerCase().contains("constraint")) {
+                return true;
+            }
+            t = t.getCause();
+        }
+        return false;
+    }
+
+    /**
      * 将一行 {@link ResultSet} 映射为 {@link Bookmark} 实体。
      */
     private Bookmark mapRow(ResultSet rs) throws SQLException {

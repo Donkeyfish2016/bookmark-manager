@@ -1,8 +1,12 @@
 package com.bookmark.service;
 
 import com.bookmark.db.BookmarkDAO;
+import com.bookmark.html.HtmlBookmarkParser;
+import com.bookmark.html.HtmlBookmarkWriter;
 import com.bookmark.model.Bookmark;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,6 +27,9 @@ import java.util.List;
 public class BookmarkService {
 
     private final BookmarkDAO bookmarkDAO;
+    // HTML 导入/导出工具（无状态，直接持有实例）
+    private final HtmlBookmarkParser htmlParser = new HtmlBookmarkParser();
+    private final HtmlBookmarkWriter htmlWriter = new HtmlBookmarkWriter();
 
     // 1. 通过构造器注入 DAO 依赖，保证依赖不可变且非空
     public BookmarkService(BookmarkDAO bookmarkDAO) {
@@ -120,6 +127,58 @@ public class BookmarkService {
     }
 
     // TODO: 添加count计数的业务
+
+    /**
+     * 查询全部书签（不分页、不分类过滤），用于导出等场景。
+     */
+    public List<Bookmark> listAll() {
+        return bookmarkDAO.query(null, 1, Integer.MAX_VALUE);
+    }
+
+    /**
+     * 从 Edge 书签 HTML 文件导入书签。
+     * 解析后批量插入，约束冲突的记录会被跳过，返回成功插入的数量。
+     *
+     * @param filePath 书签 HTML 文件路径
+     * @return 成功导入的书签数量
+     */
+    public int importFromHtml(String filePath) {
+        // 1. 校验文件路径非空
+        requireNonBlank(filePath, "filePath");
+
+        // 2. 解析 HTML 得到书签列表
+        List<Bookmark> parsed = parseHtml(new File(filePath));
+
+        // 3. 批量插入（跳过约束冲突记录）
+        return bookmarkDAO.batchInsertSkipErrors(parsed);
+    }
+
+    /**
+     * 将当前所有书签导出为 Edge 书签 HTML 文件。
+     *
+     * @param outputPath 输出 HTML 文件路径
+     */
+    public void exportToHtml(String outputPath) {
+        // 1. 校验输出路径非空
+        requireNonBlank(outputPath, "outputPath");
+
+        // 2. 读取全部书签并交给 HTML 写出器
+        List<Bookmark> all = listAll();
+        try {
+            htmlWriter.write(all, new File(outputPath));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to export bookmarks to: " + outputPath, e);
+        }
+    }
+
+    /** 调用 HTML 解析器，将 IO 异常包装为运行时异常。 */
+    private List<Bookmark> parseHtml(File file) {
+        try {
+            return htmlParser.parse(file);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse bookmark HTML: " + file, e);
+        }
+    }
 
     // ---- 校验辅助方法 ----
 

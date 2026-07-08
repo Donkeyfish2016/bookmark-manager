@@ -1,10 +1,14 @@
 import com.bookmark.db.BookmarkDAO;
 import com.bookmark.db.DatabaseMgr;
+import com.bookmark.html.HtmlBookmarkParser;
 import com.bookmark.model.Bookmark;
 import com.bookmark.service.BookmarkService;
 
 import org.junit.jupiter.api.*;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -39,6 +43,17 @@ class BookmarkServiceTests {
         dao = new BookmarkDAO();
         service = new BookmarkService(dao);
         clearCategory(CATEGORY);
+    }
+
+    // 1. 每个用例后清理导入产生的分类与导出文件，避免污染其他用例
+    @AfterEach
+    void tearDown() {
+        clearCategory(CATEGORY);
+        clearCategory("收藏夹栏");
+        clearCategory("学习资源");
+        clearCategory("编程开发/前端");
+        clearCategory("编程开发/后端");
+        new File("output_export_test.html").delete();
     }
 
     // 1. 所有用例结束后释放连接
@@ -200,6 +215,50 @@ class BookmarkServiceTests {
         assertThrows(IllegalArgumentException.class, () -> service.update(1, "u", "", "i", CATEGORY));
         assertThrows(IllegalArgumentException.class, () -> service.update(1, "u", "t", null, CATEGORY));
         assertThrows(IllegalArgumentException.class, () -> service.update(1, "u", "t", "i", " "));
+    }
+
+    /**
+     * 场景：从示例 HTML 文件导入书签，验证全部记录成功写入且分类结构正确。
+     */
+    @Test
+    void testImportFromHtml() {
+        // 1. 导入基准示例文件
+        int imported = service.importFromHtml("src/main/java/com/bookmark/html/example.html");
+
+        // 2. 12 条有效书签应全部成功导入
+        assertEquals(12, imported);
+
+        // 3. 各分类记录数应与示例一致
+        assertEquals(4, service.list("收藏夹栏", 1, 100).size());
+        assertEquals(3, service.list("学习资源", 1, 100).size());
+        assertEquals(3, service.list("编程开发/前端", 1, 100).size());
+        assertEquals(2, service.list("编程开发/后端", 1, 100).size());
+    }
+
+    /**
+     * 场景：将全部书签导出为 HTML，验证文件格式正确且可回灌解析。
+     */
+    @Test
+    void testExportToHtml() throws Exception {
+        File out = new File("output_export_test.html");
+        if (out.exists()) {
+            assertTrue(out.delete());
+        }
+
+        // 1. 插入一条可识别的书签，保证导出内容可验证
+        service.add("https://export-verify.com", "ExportVerify", "i.png", CATEGORY);
+
+        // 2. 导出全部书签到项目根目录
+        service.exportToHtml("output_export_test.html");
+
+        // 3. 文件应生成且以标准 Netscape 头部开头
+        assertTrue(out.exists());
+        String content = Files.readString(out.toPath(), StandardCharsets.UTF_8);
+        assertTrue(content.startsWith("<!DOCTYPE NETSCAPE-Bookmark-file-1>"));
+
+        // 4. 回灌解析，应包含刚插入的标记书签
+        List<Bookmark> roundTrip = new HtmlBookmarkParser().parse(out);
+        assertTrue(roundTrip.stream().anyMatch(b -> "https://export-verify.com".equals(b.getUrl())));
     }
 
     // ---- 辅助方法 ----
