@@ -98,7 +98,8 @@ public class HtmlBookmarkParser {
         LocalDateTime addDate = parseAddDate(a.attr("add_date"));
 
         // 5. 组装书签（id / createTime / updateTime 由数据库管理，此处置空）
-        return new Bookmark(null, url, title, icon.isEmpty() ? null : icon, category, addDate, null, null);
+        // TODO: folder_id暂时留空，在service中检查若为空则查找赋值
+        return new Bookmark(null, url, title, icon.isEmpty() ? null : icon, category, addDate, null, null, null);
     }
 
     /**

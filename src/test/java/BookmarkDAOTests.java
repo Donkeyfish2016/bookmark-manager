@@ -62,7 +62,7 @@ class BookmarkDAOTests {
     void testInsertQueryByIdCountDeleteLifecycle() {
         // 1. 构造并插入一条书签
         Bookmark b = new Bookmark(null, "https://example.com", "Example",
-                "https://example.com/favicon.ico", CATEGORY, LocalDateTime.now(), null, null);
+                "https://example.com/favicon.ico", CATEGORY, LocalDateTime.now(), null, null, 1);
         int id = dao.insert(b);
         assertTrue(id > 0, "插入后应返回有效的自增 id");
 
@@ -91,15 +91,15 @@ class BookmarkDAOTests {
     void testUpdate() {
         // 1. 插入记录
         int id = dao.insert(new Bookmark(null, "https://github.com", "GitHub",
-                null, CATEGORY, LocalDateTime.now(), null, null));
+                null, CATEGORY, LocalDateTime.now(), null, null, 1));
 
         // 3. 触发更新
         int affected = dao.update(new Bookmark(id, "https://github.com", "GitHub Updated",
-                null, CATEGORY, LocalDateTime.now(), null, null));
+                null, CATEGORY, LocalDateTime.now(), null, null, 1));
         assertEquals(1, affected);
 
         // 5. 不存在的 id 应返回 0 行受影响
-        assertEquals(0, dao.update(new Bookmark(999999, "https://nonexistent.com", "Non-existent", null, CATEGORY, LocalDateTime.now(), null, null)));
+        assertEquals(0, dao.update(new Bookmark(999999, "https://nonexistent.com", "Non-existent", null, CATEGORY, LocalDateTime.now(), null, null, 1)));
     }
 
     /**
@@ -108,9 +108,9 @@ class BookmarkDAOTests {
     @Test
     void testQueryByKeyword() {
         // 1. 插入两条可被关键字命中的记录，以及一条不应命中的记录
-        dao.insert(new Bookmark(null, "https://openai.com", "OpenAI", null, CATEGORY, null, null, null));
-        dao.insert(new Bookmark(null, "https://docs.python.org", "Python Docs", null, CATEGORY, null, null, null));
-        dao.insert(new Bookmark(null, "https://example.com", "Example", null, CATEGORY, null, null, null));
+        dao.insert(new Bookmark(null, "https://openai.com", "OpenAI", null, CATEGORY, null, null, null, 1));
+        dao.insert(new Bookmark(null, "https://docs.python.org", "Python Docs", null, CATEGORY, null, null, null, 1));
+        dao.insert(new Bookmark(null, "https://example.com", "Example", null, CATEGORY, null, null, null, 1));
 
         // 2. 关键字命中 url
         List<Bookmark> byUrl = dao.queryByKeyword("openai");
@@ -140,7 +140,7 @@ class BookmarkDAOTests {
         int total = 5;
         for (int i = 1; i <= total; i++) {
             dao.insert(new Bookmark(null, "https://page" + i + ".com", "Page" + i,
-                    null, PAGE_CATEGORY, null, null, null));
+                    null, PAGE_CATEGORY, null, null, null, 1));
         }
         assertEquals(total, dao.count(PAGE_CATEGORY));
 
@@ -161,7 +161,7 @@ class BookmarkDAOTests {
         assertTrue(dao.query(PAGE_CATEGORY, 10, 2).isEmpty());
 
         // 6. 空分类参数应查询全部（此处至少包含本用例的 PAGE_CATEGORY 与 OTHER 数据）
-        dao.insert(new Bookmark(null, "https://other.com", "Other", null, "OTHER", null, null, null));
+        dao.insert(new Bookmark(null, "https://other.com", "Other", null, "OTHER", null, null, null, 1));
         List<Bookmark> all = dao.query(null, 1, 1000);
         assertTrue(all.size() >= total + 1, "查询全部应至少包含本用例插入的记录");
         assertTrue(all.stream().anyMatch(b -> "OTHER".equals(b.getCategory())), "结果应含 OTHER 分类记录");
@@ -176,7 +176,7 @@ class BookmarkDAOTests {
         List<Bookmark> list = new ArrayList<>();
         for (int i = 1; i <= 3; i++) {
             list.add(new Bookmark(null, "https://batch" + i + ".com", "Batch" + i,
-                    null, CATEGORY, LocalDateTime.now(), null, null));
+                    null, CATEGORY, LocalDateTime.now(), null, null, 1));
         }
 
         // 2. 批量插入

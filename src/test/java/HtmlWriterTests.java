@@ -23,9 +23,9 @@ public class HtmlWriterTests {
         }
 
         List<Bookmark> bookmarks = List.of(
-                new Bookmark(null, "https://developer.mozilla.org/", "MDN", "icon-mdn.png", "编程开发/前端", LocalDateTime.of(2024, 1, 1, 0, 0, 1), null, null),
-                new Bookmark(null, "https://spring.io/", "Spring", "icon-spring.png", "编程开发/后端/后段", LocalDateTime.of(2024, 1, 1, 0, 0, 2), null, null),
-                new Bookmark(null, "https://example.com/?q=1&x=\"y\"", "A&B <Test>", null, "", LocalDateTime.of(2024, 1, 1, 0, 0, 3), null, null)
+                new Bookmark(null, "https://developer.mozilla.org/", "MDN", "icon-mdn.png", "编程开发/前端", LocalDateTime.of(2024, 1, 1, 0, 0, 1), null, null, 1),
+                new Bookmark(null, "https://spring.io/", "Spring", "icon-spring.png", "编程开发/后端/后段", LocalDateTime.of(2024, 1, 1, 0, 0, 2), null, null, 1),
+                new Bookmark(null, "https://example.com/?q=1&x=\"y\"", "A&B <Test>", null, "", LocalDateTime.of(2024, 1, 1, 0, 0, 3), null, null, 1)
         );
 
         writer.write(bookmarks, outputFile);

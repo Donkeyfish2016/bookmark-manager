@@ -30,5 +30,5 @@ public class Bookmark {
     /** 更新时间 */
     private LocalDateTime updateTime;
     /** 所在文件夹id */
-    // private Integer folderId;
+    private Integer folderId;
 }

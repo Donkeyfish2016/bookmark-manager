@@ -11,6 +11,8 @@ import com.bookmark.cli.UpdateCommand;
 import com.bookmark.db.BookmarkDAO;
 import com.bookmark.db.DatabaseMgr;
 import com.bookmark.service.BookmarkService;
+import com.bookmark.service.FolderService;
+
 import picocli.CommandLine;
 
 /**
@@ -27,7 +29,8 @@ public class App {
         DatabaseMgr.initialize();
 
         // 2. 组装服务层（DAO -> Service）
-        BookmarkService service = new BookmarkService(new BookmarkDAO());
+        FolderService folderService = new FolderService();
+        BookmarkService service = new BookmarkService(new BookmarkDAO(), folderService);
 
         // 3. 构建命令树：根命令 + 各子命令（注入 service）
         CommandLine commandLine = new CommandLine(new MainCommand())

@@ -4,6 +4,7 @@ import com.bookmark.html.HtmlBookmarkParser;
 import com.bookmark.model.BatchResult;
 import com.bookmark.model.Bookmark;
 import com.bookmark.service.BookmarkService;
+import com.bookmark.service.FolderService;
 
 import org.junit.jupiter.api.*;
 
@@ -31,6 +32,7 @@ class BookmarkServiceTests {
 
     private BookmarkDAO dao;
     private BookmarkService service;
+    private FolderService folderService;
 
     // 1. 初始化数据库连接与表结构
     @BeforeAll
@@ -41,8 +43,9 @@ class BookmarkServiceTests {
     // 1. 每个用例前构造服务并清理测试数据，保证隔离
     @BeforeEach
     void setUp() {
+        folderService = new FolderService();
         dao = new BookmarkDAO();
-        service = new BookmarkService(dao);
+        service = new BookmarkService(dao, folderService);
         clearCategory(CATEGORY);
     }
 

@@ -38,8 +38,8 @@ public class BookmarkDAO {
      */
     public int insert(Bookmark bookmark) {
         // 1. 仅写入业务字段，create_time / update_time 由表默认值自动填充
-        String sql = "INSERT INTO bookmarks (url, title, icon, category, add_date) " +
-                "VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO bookmarks (url, title, icon, category, add_date, folder_id) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
 
         // 2. 执行插入并取回自增主键
         try (Connection conn = DatabaseMgr.getConnection();
@@ -52,7 +52,7 @@ public class BookmarkDAO {
             // add_date 列非空：未提供时默认取当前时间
             LocalDateTime addDate = bookmark.getAddDate() != null ? bookmark.getAddDate() : LocalDateTime.now();
             ps.setString(5, toText(addDate));
-
+            ps.setInt(6, bookmark.getFolderId() != null ? bookmark.getFolderId() : 1);
             ps.executeUpdate();
 
             // 3. 读取生成的 id
@@ -78,7 +78,7 @@ public class BookmarkDAO {
     public List<Bookmark> query(String category, int page, int pageSize) {
         // 1. 根据是否提供分类拼接过滤条件
         boolean hasCategory = category != null && !category.isBlank();
-        String base = "SELECT id, url, title, icon, category, add_date, create_time, update_time FROM bookmarks";
+        String base = "SELECT id, url, title, icon, category, add_date, folder_id, create_time, update_time FROM bookmarks";
         String sql = (hasCategory ? base + " WHERE category = ?" : base)
                 + " ORDER BY id"
                 + " LIMIT ? OFFSET ?";
@@ -117,7 +117,7 @@ public class BookmarkDAO {
      */
     public Bookmark queryById(int id) {
         // 1. 按主键查询一条记录
-        String sql = "SELECT id, url, title, icon, category, add_date, create_time, update_time " +
+        String sql = "SELECT id, url, title, icon, category, add_date, folder_id, create_time, update_time " +
                 "FROM bookmarks WHERE id = ?";
 
         // 2. 映射结果（最多一条）
@@ -137,6 +137,32 @@ public class BookmarkDAO {
     }
 
     /**
+     * 根据文件夹 ID 查询书签列表。
+     * 
+     * @param folderId
+     * @return
+     */
+    public List<Bookmark> queryByFolderId(Integer folderId) {
+        String sql = "SELECT id, url, title, icon, category, add_date, folder_id, create_time, update_time " +
+                "FROM bookmarks WHERE folder_id = ? ORDER BY id";
+
+        List<Bookmark> result = new ArrayList<>();
+        try (Connection conn = DatabaseMgr.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, folderId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to query bookmarks by folderId: " + folderId, e);
+        }
+        return result;
+    }
+
+    /**
      * 在 url 与 title 两个字段上做模糊搜索。
      *
      * @param keyword 关键字（自动前后加通配符）
@@ -144,7 +170,7 @@ public class BookmarkDAO {
      */
     public List<Bookmark> queryByKeyword(String keyword) {
         // 1. 对 url 与 title 同时使用 LIKE 模糊匹配
-        String sql = "SELECT id, url, title, icon, category, add_date, create_time, update_time " +
+        String sql = "SELECT id, url, title, icon, category, add_date, folder_id, create_time, update_time " +
                 "FROM bookmarks WHERE url LIKE ? OR title LIKE ? ORDER BY id";
 
         // 2. 执行查询并映射结果
@@ -257,7 +283,7 @@ public class BookmarkDAO {
             return new BatchResult(0, 0);
         }
 
-        String sql = "INSERT INTO bookmarks (url, title, icon, category, add_date) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO bookmarks (url, title, icon, category, add_date, folder_id) VALUES (?, ?, ?, ?, ?, ?)";
         Connection conn = DatabaseMgr.getConnection();
         boolean originalAutoCommit = true;
 
@@ -283,6 +309,7 @@ public class BookmarkDAO {
                     // add_date 列非空：未提供时默认取当前时间
                     LocalDateTime addDate = b.getAddDate() != null ? b.getAddDate() : LocalDateTime.now();
                     ps.setString(5, toText(addDate));
+                    ps.setInt(6, b.getFolderId() != null ? b.getFolderId() : 1);
 
                     if (ps.executeUpdate() > 0) {
                         success++;
@@ -354,7 +381,8 @@ public class BookmarkDAO {
                 rs.getString("category"),
                 toLocalDateTime(rs.getString("add_date")),
                 toLocalDateTime(rs.getString("create_time")),
-                toLocalDateTime(rs.getString("update_time"))
+                toLocalDateTime(rs.getString("update_time")), 
+                rs.getInt("folder_id")
         );
     }
 

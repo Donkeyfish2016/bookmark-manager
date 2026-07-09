@@ -1,6 +1,7 @@
 package com.bookmark.service;
 
 import com.bookmark.db.BookmarkDAO;
+import com.bookmark.db.FolderDAO;
 import com.bookmark.html.HtmlBookmarkParser;
 import com.bookmark.html.HtmlBookmarkWriter;
 import com.bookmark.model.BatchResult;
@@ -28,16 +29,21 @@ import java.util.List;
 public class BookmarkService {
 
     private final BookmarkDAO bookmarkDAO;
+    private final FolderService folderService;
     // HTML 导入/导出工具（无状态，直接持有实例）
     private final HtmlBookmarkParser htmlParser = new HtmlBookmarkParser();
     private final HtmlBookmarkWriter htmlWriter = new HtmlBookmarkWriter();
 
     // 1. 通过构造器注入 DAO 依赖，保证依赖不可变且非空
-    public BookmarkService(BookmarkDAO bookmarkDAO) {
+    public BookmarkService(BookmarkDAO bookmarkDAO, FolderService folderService) {
         if (bookmarkDAO == null) {
             throw new IllegalArgumentException("BookmarkDAO must not be null");
         }
+        if (folderService == null) {
+            throw new IllegalArgumentException("FolderService must not be null");
+        }
         this.bookmarkDAO = bookmarkDAO;
+        this.folderService = folderService;
     }
 
     /**
@@ -51,11 +57,14 @@ public class BookmarkService {
         requireNonBlank(title, "title");
         requireNonBlank(category, "category");
 
-        // 2. 构造实体并写入数据库（add_date 取当前时间）
-        Bookmark bookmark = new Bookmark(null, url, title, icon, category, LocalDateTime.now(), null, null);
+        // 2. 解析分类获取文件夹ID
+        Integer folderId = parseCategory(category);
+
+        // 3. 构造实体并写入数据库（add_date 取当前时间）
+        Bookmark bookmark = new Bookmark(null, url, title, icon, category, LocalDateTime.now(), null, null, folderId);
         int id = bookmarkDAO.insert(bookmark);
 
-        // 3. 回填自增主键后返回完整对象
+        // 4. 回填自增主键后返回完整对象
         bookmark.setId(id);
         return bookmark;
     }
@@ -122,8 +131,11 @@ public class BookmarkService {
         requireNonBlank(icon, "icon");
         requireNonBlank(category, "category");
 
-        // 2. 以 id 定位构造实体并委托 DAO 更新
-        Bookmark bookmark = new Bookmark(id, url, title, icon, category, null, null, null);
+        // 2. 解析分类获取文件夹ID
+        Integer folderId = parseCategory(category);
+
+        // 3. 以 id 定位构造实体并委托 DAO 更新
+        Bookmark bookmark = new Bookmark(id, url, title, icon, category, null, null, null, folderId);
         return bookmarkDAO.update(bookmark) > 0;
     }
 
@@ -189,6 +201,31 @@ public class BookmarkService {
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse bookmark HTML: " + file, e);
         }
+    }
+
+    private Integer parseCategory(String category) {
+        // 2. 按照category拆解文件夹名称，获取或创建文件夹ID
+        String folderName = null;
+        String parentFolderName = null;
+        if (!category.contains("/")) {
+            folderName = category;
+        } else {
+            String[] parts = category.split("/");
+            folderName = parts[parts.length - 1];
+            parentFolderName = parts[parts.length - 2];
+        }
+        // 获取或创建文件夹 ID
+        // TODO: 占位，实现service之后改
+        Integer folderId = 999;
+        // Integer folderId = folderService.getFolderByName(folderName);
+        // if (folderId == null) {
+        //     Integer parentFolderId = null;
+        //     if (parentFolderName != null) {
+        //         parentFolderId = folderService.getFolderByName(parentFolderName);
+        //     }
+        //     folderId = folderService.createFolder(folderName, parentFolderId);
+        // }
+        return folderId;
     }
 
     // ---- 校验辅助方法 ----
