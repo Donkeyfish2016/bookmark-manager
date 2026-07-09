@@ -7,6 +7,7 @@ import com.bookmark.html.HtmlBookmarkWriter;
 import com.bookmark.model.BatchResult;
 import com.bookmark.model.Bookmark;
 import com.bookmark.model.Folder;
+import com.bookmark.model.ImportResult;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,20 +32,25 @@ import java.util.List;
 public class BookmarkService {
 
     private final BookmarkDAO bookmarkDAO;
+    private final FolderDAO folderDAO;
     private final FolderService folderService;
     // HTML 导入/导出工具（无状态，直接持有实例）
     private final HtmlBookmarkParser htmlParser = new HtmlBookmarkParser();
     private final HtmlBookmarkWriter htmlWriter = new HtmlBookmarkWriter();
 
     // 1. 通过构造器注入 DAO 依赖，保证依赖不可变且非空
-    public BookmarkService(BookmarkDAO bookmarkDAO, FolderService folderService) {
+    public BookmarkService(BookmarkDAO bookmarkDAO, FolderDAO folderDAO, FolderService folderService) {
         if (bookmarkDAO == null) {
             throw new IllegalArgumentException("BookmarkDAO must not be null");
+        }
+        if (folderDAO == null) {
+            throw new IllegalArgumentException("FolderDAO must not be null");
         }
         if (folderService == null) {
             throw new IllegalArgumentException("FolderService must not be null");
         }
         this.bookmarkDAO = bookmarkDAO;
+        this.folderDAO = folderDAO;
         this.folderService = folderService;
     }
 
@@ -158,23 +164,83 @@ public class BookmarkService {
     }
 
     /**
-     * 从 Edge 书签 HTML 文件导入书签。
-     * 解析后批量插入，约束冲突的记录会被跳过。
+     * 从 Edge 书签 HTML 文件导入书签：先清空旧数据，再按层级树写入文件夹与书签。
      *
      * @param filePath 书签 HTML 文件路径
-     * @return 导入结果（成功数与失败数）
+     * @return 导入结果（书签总数与文件夹总数）
      */
-    public BatchResult importFromHtml(String filePath) {
+    public ImportResult importFromHtml(String filePath) {
         // 1. 校验文件路径非空
         requireNonBlank(filePath, "filePath");
 
-        // 2. 解析 HTML 得到层级树并展平为书签列表
-        Folder root = htmlParser.parse(new File(filePath));
-        List<Bookmark> parsed = flatten(root);
+        // 2. 解析 HTML 得到层级文件夹树
+        Folder root = htmlParser.parseToTree(new File(filePath));
 
-        // 3. 批量插入（跳过约束冲突记录），返回成功/失败统计
-        BatchResult result = bookmarkDAO.batchInsertSkipErrors(parsed);
-        return result;
+        // 3. 导入前清空现有数据，保证干净状态（先书签后文件夹，避免约束冲突）
+        bookmarkDAO.deleteAll();
+        folderDAO.deleteAll();
+
+        // 4. 递归插入文件夹树：回填数据库自增 id 并维护 parent_id 层级
+        int folderCount = 0;
+        for (Folder top : root.getChildren().values()) {
+            folderCount += insertFolder(top, null);
+        }
+
+        // 5. 收集整棵树中的全部书签，并依据所在文件夹设置 folderId
+        List<Bookmark> bookmarks = new ArrayList<>();
+        collectBookmarks(root, bookmarks);
+        Integer bookmarksBarId = null;
+        for (Bookmark b : bookmarks) {
+            Integer fid = b.getFolderId();
+            if (fid == null || fid <= 0) {
+                // 5.1 防御：无法解析所属文件夹时归入默认“Bookmarks Bar”
+                if (bookmarksBarId == null) {
+                    bookmarksBarId = folderService.createFolder(DEFAULT_FOLDER_NAME, null);
+                }
+                b.setFolderId(bookmarksBarId);
+            }
+        }
+
+        // 6. 批量插入书签（沿用现有事务策略，跳过约束冲突记录）
+        BatchResult batch = bookmarkDAO.batchInsertSkipErrors(bookmarks);
+
+        // 7. 返回结构化结果：书签总数与文件夹总数
+        return new ImportResult(batch.getSuccess(), folderCount);
+    }
+
+    /**
+     * 递归插入文件夹：写入数据库并回填自增 id，再按 parentId 下钻子文件夹。
+     *
+     * @param folder   当前文件夹节点
+     * @param parentId 父文件夹数据库 id（顶层为 {@code null}）
+     * @return 本次递归插入的文件夹数量（含自身）
+     */
+    private int insertFolder(Folder folder, Integer parentId) {
+        // 1. 设置父级 id（顶层文件夹 parentId 为 null，将被标记 is_root）
+        folder.setParentId(parentId);
+        // 2. 持久化并取回数据库自增主键
+        int id = folderDAO.insert(folder);
+        folder.setId(id);
+        // 3. 递归处理子文件夹，parentId 指向当前文件夹的数据库 id
+        int count = 1;
+        for (Folder child : folder.getChildren().values()) {
+            count += insertFolder(child, id);
+        }
+        return count;
+    }
+
+    /**
+     * 深度优先收集整棵树中的所有书签，并将其 folderId 设为所在文件夹的数据库 id。
+     */
+    private void collectBookmarks(Folder folder, List<Bookmark> out) {
+        for (Bookmark b : folder.getBookmarks()) {
+            // 将书签挂到当前文件夹的数据库 id（解析失败时置空，由调用方兜底）
+            b.setFolderId(folder.getId() > 0 ? folder.getId() : null);
+            out.add(b);
+        }
+        for (Folder child : folder.getChildren().values()) {
+            collectBookmarks(child, out);
+        }
     }
 
     /**
@@ -197,15 +263,8 @@ public class BookmarkService {
         return all.size();
     }
 
-    /** 将层级文件夹树展平为书签列表（书签已携带 category 路径）。 */
-    private List<Bookmark> flatten(Folder folder) {
-        List<Bookmark> out = new ArrayList<>();
-        for (Folder child : folder.getChildren().values()) {
-            out.addAll(child.getBookmarks());
-            out.addAll(flatten(child));
-        }
-        return out;
-    }
+    /** 默认文件夹名：用于兜底收纳无法解析所属文件夹的书签。 */
+    private static final String DEFAULT_FOLDER_NAME = "Bookmarks Bar";
 
     private Integer parseCategory(String category) {
         // 2. 按照category拆解文件夹名称，获取或创建文件夹ID

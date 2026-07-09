@@ -39,7 +39,7 @@ public class App {
 
         // 2. 组装服务层（DAO -> Service）
         FolderService folderService = new FolderService(new FolderDAO(), new BookmarkDAO());
-        BookmarkService service = new BookmarkService(new BookmarkDAO(), folderService);
+        BookmarkService service = new BookmarkService(new BookmarkDAO(), new FolderDAO(), folderService);
 
         // 3. 构建命令树：根命令 + 各子命令（注入 service）
         CommandLine commandLine = new CommandLine(new MainCommand())

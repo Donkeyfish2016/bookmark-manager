@@ -355,6 +355,20 @@ public class BookmarkDAO {
         return new BatchResult(success, failures);
     }
 
+    /**
+     * 清空 bookmarks 表全部记录，供导入前重置干净状态。
+     */
+    public void deleteAll() {
+        // 1. 直接删除全部书签记录（无外键约束，无需关心顺序）
+        String sql = "DELETE FROM bookmarks";
+        try (Connection conn = DatabaseMgr.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to delete all bookmarks", e);
+        }
+    }
+
     /** 判断异常链中是否包含数据库约束冲突（SQLite: SQLITE_CONSTRAINT=19）。 */
     private boolean isConstraintViolation(SQLException e) {
         Throwable t = e;

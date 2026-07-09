@@ -257,6 +257,20 @@ public class FolderDAO {
         }
     }
 
+    /**
+     * 清空 folders 表全部记录，供导入前重置干净状态。
+     */
+    public void deleteAll() {
+        // 1. 直接删除全部文件夹记录（导入前已先清理 bookmarks，无外键约束冲突）
+        String sql = "DELETE FROM folders";
+        try (Connection conn = DatabaseMgr.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to delete all folders", e);
+        }
+    }
+
     private Folder mapRow(ResultSet rs) throws SQLException {
         Folder folder = new Folder();
         folder.setId(rs.getInt("id"));

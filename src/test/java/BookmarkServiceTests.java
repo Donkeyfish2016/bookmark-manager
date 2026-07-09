@@ -1,22 +1,27 @@
 import com.bookmark.db.BookmarkDAO;
 import com.bookmark.db.DatabaseMgr;
+import com.bookmark.db.FolderDAO;
 import com.bookmark.html.HtmlBookmarkParser;
-import com.bookmark.model.BatchResult;
 import com.bookmark.model.Bookmark;
 import com.bookmark.model.Folder;
+import com.bookmark.model.ImportResult;
 import com.bookmark.service.BookmarkService;
 import com.bookmark.service.FolderService;
 
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,8 +38,12 @@ class BookmarkServiceTests {
     private static final String CATEGORY = "SVC_TEST";
 
     private BookmarkDAO dao;
+    private FolderDAO folderDao;
     private BookmarkService service;
     private FolderService folderService;
+
+    @TempDir
+    Path tempDir;
 
     // 1. 初始化数据库连接与表结构
     @BeforeAll
@@ -47,19 +56,17 @@ class BookmarkServiceTests {
     void setUp() {
         folderService = new FolderService();
         dao = new BookmarkDAO();
-        service = new BookmarkService(dao, folderService);
+        folderDao = new FolderDAO();
+        service = new BookmarkService(dao, folderDao, folderService);
         clearCategory(CATEGORY);
     }
 
-    // 1. 每个用例后清理导入产生的分类与导出文件，避免污染其他用例
+    // 1. 每个用例后清空全量数据并清理导出文件，避免污染其他用例
     @AfterEach
     void tearDown() {
-        clearCategory(CATEGORY);
-        clearCategory("收藏夹栏");
-        clearCategory("学习资源");
-        clearCategory("编程开发/前端");
-        clearCategory("编程开发/后端");
-        // new File("output_test.html").delete();
+        dao.deleteAll();
+        folderDao.deleteAll();
+        new File("output_test.html").delete();
     }
 
     // 1. 所有用例结束后释放连接
@@ -229,17 +236,23 @@ class BookmarkServiceTests {
     @Test
     void testImportFromHtml() {
         // 1. 导入基准示例文件
-        BatchResult imported = service.importFromHtml("src/main/java/com/bookmark/html/example.html");
+        ImportResult imported = service.importFromHtml("src/main/java/com/bookmark/html/example.html");
 
-        // 2. 12 条有效书签应全部成功导入，且无失败
-        assertEquals(12, imported.getSuccess());
-        assertEquals(0, imported.getFailures());
+        // 2. 12 条有效书签应全部成功导入，5 个文件夹层级建立
+        assertEquals(12, imported.getBookmarks());
+        assertEquals(5, imported.getFolders());
 
         // 3. 各分类记录数应与示例一致
         assertEquals(4, service.list("收藏夹栏", 1, 100).size());
         assertEquals(3, service.list("学习资源", 1, 100).size());
         assertEquals(3, service.list("编程开发/前端", 1, 100).size());
         assertEquals(2, service.list("编程开发/后端", 1, 100).size());
+
+        // 4. 文件夹层级应正确：编程开发(父) -> 前端/后端(子)
+        Map<String, Folder> folders = allFoldersByName();
+        assertTrue(folders.containsKey("编程开发"));
+        assertTrue(folders.containsKey("前端"));
+        assertEquals(folders.get("编程开发").getId(), folders.get("前端").getParentId());
     }
 
     /**
@@ -270,7 +283,163 @@ class BookmarkServiceTests {
         assertTrue(roundTrip.stream().anyMatch(b -> "https://export-verify.com".equals(b.getUrl())));
     }
 
+    // ===== 导入场景：层级 / 边界 / 特殊用例 =====
+
+    /** 将 HTML 字符串以 UTF-8 写入临时文件，供导入流程读取。 */
+    private File writeHtml(String name, String html) throws Exception {
+        File file = tempDir.resolve(name).toFile();
+        Files.writeString(file.toPath(), html, StandardCharsets.UTF_8);
+        return file;
+    }
+
+    /** 将全部文件夹按名称建立索引，便于断言层级关系。 */
+    private Map<String, Folder> allFoldersByName() {
+        return folderService.getAllFolders().stream()
+                .collect(Collectors.toMap(Folder::getName, f -> f, (a, b) -> a));
+    }
+
+    /**
+     * 场景：深度嵌套的文件夹层级应被完整还原，且 parent_id 指向上级数据库 id。
+     */
+    @Test
+    void testImportDeeplyNestedHierarchy() throws Exception {
+        String html = "<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<DL><p>\n"
+                + "  <DT><H3>L1</H3><DL><p>\n"
+                + "    <DT><H3>L2</H3><DL><p>\n"
+                + "      <DT><H3>L3</H3><DL><p>\n"
+                + "        <DT><H3>L4</H3><DL><p>\n"
+                + "          <DT><A HREF=\"https://deep.com/\" ADD_DATE=\"1\">Deep</A>\n"
+                + "        </DL><p>\n"
+                + "      </DL><p>\n"
+                + "    </DL><p>\n"
+                + "  </DL><p>\n"
+                + "</DL><p>\n";
+        ImportResult result = service.importFromHtml(writeHtml("deep.html", html).getPath());
+
+        // 1. 共 4 个文件夹、1 条书签
+        assertEquals(4, result.getFolders());
+        assertEquals(1, result.getBookmarks());
+
+        // 2. parent_id 应逐层指向上级文件夹的数据库 id
+        Map<String, Folder> folders = allFoldersByName();
+        assertNotNull(folders.get("L1"));
+        assertNull(folders.get("L1").getParentId(), "顶级文件夹 parent_id 应为 null");
+        assertEquals(folders.get("L1").getId(), folders.get("L2").getParentId());
+        assertEquals(folders.get("L2").getId(), folders.get("L3").getParentId());
+        assertEquals(folders.get("L3").getId(), folders.get("L4").getParentId());
+
+        // 3. 最深书签应归属 L4 文件夹
+        List<Bookmark> inL4 = dao.queryByFolderId(folders.get("L4").getId());
+        assertEquals(1, inL4.size());
+        assertEquals("https://deep.com/", inL4.get(0).getUrl());
+    }
+
+    /**
+     * 场景：空文件夹（无书签、无子文件夹）也应被导入，且不产生孤立书签。
+     */
+    @Test
+    void testImportEmptyFolder() throws Exception {
+        String html = "<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<DL><p>\n"
+                + "  <DT><H3>Empty</H3><DL><p>\n"
+                + "  </DL><p>\n"
+                + "  <DT><H3>WithBm</H3><DL><p>\n"
+                + "    <DT><A HREF=\"https://x.com/\" ADD_DATE=\"1\">X</A>\n"
+                + "  </DL><p>\n"
+                + "</DL><p>\n";
+        ImportResult result = service.importFromHtml(writeHtml("empty.html", html).getPath());
+
+        // 1. 两个文件夹、一条书签
+        assertEquals(2, result.getFolders());
+        assertEquals(1, result.getBookmarks());
+
+        // 2. 空文件夹存在且无下属书签
+        Folder empty = allFoldersByName().get("Empty");
+        assertNotNull(empty);
+        assertTrue(dao.queryByFolderId(empty.getId()).isEmpty());
+    }
+
+    /**
+     * 场景：缺少 ICON 属性的书签，icon 字段应为 null 而非占位串。
+     */
+    @Test
+    void testImportBookmarkMissingIcon() throws Exception {
+        String html = "<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<DL><p>\n"
+                + "  <DT><H3>F</H3><DL><p>\n"
+                + "    <DT><A HREF=\"https://noicon.com/\" ADD_DATE=\"1\">NoIcon</A>\n"
+                + "  </DL><p>\n"
+                + "</DL><p>\n";
+        service.importFromHtml(writeHtml("noicon.html", html).getPath());
+
+        Map<String, Folder> folders = allFoldersByName();
+        List<Bookmark> bookmarks = dao.queryByFolderId(folders.get("F").getId());
+        assertEquals(1, bookmarks.size());
+        assertNull(bookmarks.get(0).getIcon(), "缺失 ICON 时 icon 应为 null");
+    }
+
+    /**
+     * 场景：标题与 URL 包含特殊字符（& < > " 及查询参数）时应原样保留。
+     */
+    @Test
+    void testImportSpecialCharacters() throws Exception {
+        // HTML 中对特殊字符做实体转义，解析后应还原为原始字符
+        String url = "https://special.com/search?q=1&x=\"y\"&z=<a>";
+        String title = "A&B <C> \"quote\"";
+        String html = "<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<DL><p>\n"
+                + "  <DT><H3>F</H3><DL><p>\n"
+                + "    <DT><A HREF=\"" + escapeForAttr(url) + "\" ADD_DATE=\"1\">" + escapeForText(title) + "</A>\n"
+                + "  </DL><p>\n"
+                + "</DL><p>\n";
+        service.importFromHtml(writeHtml("special.html", html).getPath());
+
+        Map<String, Folder> folders = allFoldersByName();
+        List<Bookmark> bookmarks = dao.queryByFolderId(folders.get("F").getId());
+        assertEquals(1, bookmarks.size());
+        assertEquals(url, bookmarks.get(0).getUrl(), "URL 中的特殊字符应原样保留");
+        assertEquals(title, bookmarks.get(0).getTitle(), "标题中的特殊字符应原样保留");
+    }
+
+    /**
+     * 场景：相同 URL 出现在不同文件夹时，应分别导入为两条记录，且归属不同文件夹。
+     */
+    @Test
+    void testImportDuplicateUrlDifferentFolders() throws Exception {
+        String html = "<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<DL><p>\n"
+                + "  <DT><H3>FolderA</H3><DL><p>\n"
+                + "    <DT><A HREF=\"https://dup.com/\" ADD_DATE=\"1\">A</A>\n"
+                + "  </DL><p>\n"
+                + "  <DT><H3>FolderB</H3><DL><p>\n"
+                + "    <DT><A HREF=\"https://dup.com/\" ADD_DATE=\"2\">B</A>\n"
+                + "  </DL><p>\n"
+                + "</DL><p>\n";
+        ImportResult result = service.importFromHtml(writeHtml("dup.html", html).getPath());
+
+        // 1. 两个文件夹、两条书签
+        assertEquals(2, result.getFolders());
+        assertEquals(2, result.getBookmarks());
+
+        // 2. 两条书签 URL 相同但 folder_id 不同
+        Map<String, Folder> folders = allFoldersByName();
+        List<Bookmark> inA = dao.queryByFolderId(folders.get("FolderA").getId());
+        List<Bookmark> inB = dao.queryByFolderId(folders.get("FolderB").getId());
+        assertEquals(1, inA.size());
+        assertEquals(1, inB.size());
+        assertEquals("https://dup.com/", inA.get(0).getUrl());
+        assertEquals("https://dup.com/", inB.get(0).getUrl());
+        assertNotEquals(inA.get(0).getFolderId(), inB.get(0).getFolderId(),
+                "同 URL 不同文件夹应归属不同的 folder_id");
+    }
+
     // ---- 辅助方法 ----
+
+    /** 对 HTML 属性值做必要转义（双引号、&、<、>）。 */
+    private String escapeForAttr(String value) {
+        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    /** 对 HTML 文本节点做必要转义（&、<、>）。 */
+    private String escapeForText(String value) {
+        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
 
     /** 递归收集整棵文件夹树中的所有书签。 */
     private void collectAll(Folder folder, List<Bookmark> out) {

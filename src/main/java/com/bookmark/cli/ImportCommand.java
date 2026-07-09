@@ -1,6 +1,6 @@
 package com.bookmark.cli;
 
-import com.bookmark.model.BatchResult;
+import com.bookmark.model.ImportResult;
 import com.bookmark.service.BookmarkService;
 import picocli.CommandLine;
 
@@ -38,11 +38,11 @@ public class ImportCommand implements Callable<Integer> {
      */
     @Override
     public Integer call() {
-        // 1. 委托服务层导入，获取成功/失败统计
-        BatchResult result = bookmarkService.importFromHtml(file);
+        // 1. 委托服务层导入，获取导入统计
+        ImportResult result = bookmarkService.importFromHtml(file);
 
         // 2. 打印导入完成信息
-        System.out.println("导入完成：成功 " + result.getSuccess() + " 条，失败 " + result.getFailures() + " 条");
+        System.out.println("导入完成：书签 " + result.getBookmarks() + " 条，文件夹 " + result.getFolders() + " 个");
 
         // 3. 提示用户可用 list 命令查看导入结果
         System.out.println("可运行 'list' 命令查看已导入的书签。");

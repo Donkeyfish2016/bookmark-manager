@@ -64,6 +64,17 @@ public class HtmlBookmarkParser {
     }
 
     /**
+     * 解析书签 HTML 文件为层级文件夹树（{@link #parse(File)} 的语义化别名，便于导入流程阅读）。
+     *
+     * @param file Edge 导出的书签 HTML 文件
+     * @return 根 {@link Folder} 层级树
+     * @throws RuntimeException 当文件缺失或 HTML 不可解析时抛出
+     */
+    public Folder parseToTree(File file) {
+        return parse(file);
+    }
+
+    /**
      * 递归解析一个 {@code <DL>} 容器，把其中的文件夹挂到父文件夹的 {@code children} 映射，
      * 把其中的书签挂到对应文件夹的 {@code bookmarks} 列表。
      *
