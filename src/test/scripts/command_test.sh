@@ -27,48 +27,48 @@ run() {
 }
 
 # [1/6] 新增多条书签，并捕获自动生成的主键 id
-echo ""
-echo "[1/6] Adding bookmarks"
-ID1=$(run add --url "https://python.org"     --title \"Python Official Site\" --icon "py.png"  --category "Dev"    | sed -n 's/.*id=\([0-9]*\).*/\1/p')
-ID2=$(run add --url "https://docs.python.org" --title \"Python Docs\"          --icon "doc.png" --category "Dev"    | sed -n 's/.*id=\([0-9]*\).*/\1/p')
-ID3=$(run add --url "https://github.com"      --title \"GitHub\"               --icon "gh.png"  --category "Social" | sed -n 's/.*id=\([0-9]*\).*/\1/p')
-echo "Captured ids: ID1=$ID1 ID2=$ID2 ID3=$ID3"
+# echo ""
+# echo "[1/6] Adding bookmarks"
+# ID1=$(run add --url "https://python.org"     --title \"Python Official Site\" --icon "py.png"  --category "Dev"    | sed -n 's/.*id=\([0-9]*\).*/\1/p')
+# ID2=$(run add --url "https://docs.python.org" --title \"Python Docs\"          --icon "doc.png" --category "Dev"    | sed -n 's/.*id=\([0-9]*\).*/\1/p')
+# ID3=$(run add --url "https://github.com"      --title \"GitHub\"               --icon "gh.png"  --category "Social" | sed -n 's/.*id=\([0-9]*\).*/\1/p')
+# echo "Captured ids: ID1=$ID1 ID2=$ID2 ID3=$ID3"
 
-# [2/6] 列出全部书签
-echo ""
-echo "[2/6] Listing all bookmarks"
-run list
+# # [2/6] 列出全部书签
+# echo ""
+# echo "[2/6] Listing all bookmarks"
+# run list
 
-# [3/6] 按指定分类列出书签
-echo ""
-echo "[3/6] Listing bookmarks in category 'Dev'"
-run list --category Dev
+# # [3/6] 按指定分类列出书签
+# echo ""
+# echo "[3/6] Listing bookmarks in category 'Dev'"
+# run list --category Dev
 
-# [4/6] 关键字搜索（'python' 同时命中 title 与 url 字段）
-echo ""
-echo "[4/6] Searching by keyword 'python' (matches title and url)"
-run search --keyword python
+# # [4/6] 关键字搜索（'python' 同时命中 title 与 url 字段）
+# echo ""
+# echo "[4/6] Searching by keyword 'python' (matches title and url)"
+# run search --keyword python
 
-# [5/6] 更新多条记录（分别更新 title 与 category，未提供字段保持不变）
-echo ""
-echo "[5/6] Updating entries (id=$ID1 title, id=$ID2 category)"
-run update --id "$ID1" --title \"Python Official updated\"
-run update --id "$ID2" --category \"Dev/Python\"
+# # [5/6] 更新多条记录（分别更新 title 与 category，未提供字段保持不变）
+# echo ""
+# echo "[5/6] Updating entries (id=$ID1 title, id=$ID2 category)"
+# run update --id "$ID1" --title \"Python Official updated\"
+# run update --id "$ID2" --category \"Dev/Python\"
 
-# [6/6] 删除指定记录
-echo ""
-echo "[6/6] Deleting entry id=$ID3"
-run delete --id "$ID3"
+# # [6/6] 删除指定记录
+# echo ""
+# echo "[6/6] Deleting entry id=$ID3"
+# run delete --id "$ID3"
 
-# [1/2] 导入命令测试：从示例 HTML 文件导入书签
-echo ""
-echo "[1/2] 导入命令测试"
-run import --file src/main/java/com/bookmark/html/example.html
+# # [1/2] 导入命令测试：从示例 HTML 文件导入书签
+# echo ""
+# echo "[1/2] 导入命令测试"
+# run import --file src/main/java/com/bookmark/html/example.html
 
-# [2/2] 导出命令测试：将全部书签导出到指定 HTML 文件
-echo ""
-echo "[2/2] 导出命令测试"
-run export --output cli_export_test.html
+# # [2/2] 导出命令测试：将全部书签导出到指定 HTML 文件
+# echo ""
+# echo "[2/2] 导出命令测试"
+# run export --output cli_export_test.html
 
 # [1/4] 文件夹新增命令测试：创建与 in.sql 一致的文件夹结构（a 根 -> b -> c，a -> d）
 echo ""

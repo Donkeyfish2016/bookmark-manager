@@ -38,12 +38,12 @@ public class FolderAddCommand implements Callable<Integer> {
 
     // 3. 声明可选的父文件夹 id，未提供时回退到根文件夹
     @CommandLine.Option(names = {"-p", "--parent-id"},
-            description = "Parent folder id. Defaults to the Favorites Bar root.")
+            description = "Parent folder id. Defaults to the Favorites Bar root.", required = false)
     private Integer parentId;
 
     // 4. 声明可选的“根文件夹”标记，优先于 --parent-id
     @CommandLine.Option(names = {"-r", "--root"},
-            description = "Create as a root folder (ignores --parent-id).")
+            description = "Create as a root folder (ignores --parent-id).", required = false)
     private boolean root;
 
     /**
