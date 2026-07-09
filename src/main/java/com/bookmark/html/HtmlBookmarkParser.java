@@ -24,7 +24,7 @@ import java.time.ZoneOffset;
 public class HtmlBookmarkParser {
 
     /** 默认“工具栏”文件夹名：用于收纳游离（无显式文件夹）的书签。 */
-    private static final String TOOLBAR = "Toolbar";
+    private static final String TOOLBAR = "游离书签";
 
     /**
      * 解析书签 HTML 文件，返回表示整棵书签层级树的根文件夹。
@@ -55,7 +55,7 @@ public class HtmlBookmarkParser {
 
         // 4. 构建虚拟根文件夹，作为整棵树的起点
         Folder root = new Folder();
-        root.setName("root");
+        root.setName("__root__");
         root.setRoot(true);
 
         // 5. 从根 <DL> 开始递归构建子树（isRoot=true 用于识别游离书签）
@@ -112,7 +112,7 @@ public class HtmlBookmarkParser {
             Element a = child.selectFirst("a");
             if (a != null) {
                 if (isRoot) {
-                    // 8. 根层级游离书签：归入默认的“Toolbar”文件夹（按需创建）
+                    // 8. 根层级游离书签：归入默认文件夹（按需创建）
                     Folder toolbar = folder.getChildren().computeIfAbsent(TOOLBAR, key -> {
                         Folder t = new Folder();
                         t.setName(TOOLBAR);

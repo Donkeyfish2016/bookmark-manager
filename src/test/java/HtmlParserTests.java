@@ -149,7 +149,7 @@ class HtmlParserTests {
         assertEquals("L1/L2/L3/L4/L5", current.getBookmarks().get(0).getCategory());
     }
 
-    // ===== 4. 游离书签归入 Toolbar =====
+    // ===== 4. 游离书签归入 “游离书签”文件夹 =====
 
     @Test
     void testOrphanBookmarksAssignedToToolbar() throws Exception {
@@ -162,11 +162,11 @@ class HtmlParserTests {
         Folder root = parser.parse(writeHtml("orphan.html", html));
 
         // 游离书签应进入默认 Toolbar 文件夹
-        Folder toolbar = root.getChildren().get("Toolbar");
-        assertNotNull(toolbar, "应创建默认 Toolbar 文件夹");
+        Folder toolbar = root.getChildren().get("游离书签");
+        assertNotNull(toolbar, "应创建默认 游离书签 文件夹");
         assertEquals(1, toolbar.getBookmarks().size());
         assertEquals("https://orphan.com/", toolbar.getBookmarks().get(0).getUrl());
-        assertEquals("Toolbar", toolbar.getBookmarks().get(0).getCategory());
+        assertEquals("游离书签", toolbar.getBookmarks().get(0).getCategory());
 
         // 普通文件夹及其书签不受影响
         assertEquals(1, root.getChildren().get("RealFolder").getBookmarks().size());
@@ -181,7 +181,7 @@ class HtmlParserTests {
                 + "    </DL><p>\n"
                 + "</DL><p>\n";
         Folder root = parser.parse(writeHtml("noorphan.html", html));
-        assertFalse(root.getChildren().containsKey("Toolbar"), "无游离书签时不应创建 Toolbar");
+        assertFalse(root.getChildren().containsKey("游离书签"), "无游离书签时不应创建 游离书签 文件夹");
     }
 
     // ===== 5. 编码场景 =====
