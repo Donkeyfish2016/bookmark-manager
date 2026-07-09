@@ -70,6 +70,15 @@ echo ""
 echo "[2/2] 导出命令测试"
 run export --output cli_export_test.html
 
+# [1/4] 文件夹新增命令测试：创建与 in.sql 一致的文件夹结构（a 根 -> b -> c，a -> d）
+echo ""
+echo "[1/4] 文件夹新增命令测试"
+A_ID=$(run folder add --name a --root | sed -n 's/.*ID: \([0-9]*\).*/\1/p')
+B_ID=$(run folder add --name b --parent-id "$A_ID" | sed -n 's/.*ID: \([0-9]*\).*/\1/p')
+C_ID=$(run folder add --name c --parent-id "$B_ID" | sed -n 's/.*ID: \([0-9]*\).*/\1/p')
+D_ID=$(run folder add --name d --parent-id "$A_ID" | sed -n 's/.*ID: \([0-9]*\).*/\1/p')
+echo "Created folder ids: A=$A_ID B=$B_ID C=$C_ID D=$D_ID"
+
 # [1/3] 文件夹树命令测试：以 ASCII 树状结构展示文件夹层级
 echo ""
 echo "[1/3] 文件夹树命令测试"
@@ -83,7 +92,31 @@ run folder list
 # [3/3] 文件夹详情命令测试：展示指定 ID 文件夹的详细元数据
 echo ""
 echo "[3/3] 文件夹详情命令测试"
-run folder info --id 1
+run folder info --id "$A_ID"
+
+# [2/4] 文件夹重命名命令测试：将 c 重命名为 c2
+echo ""
+echo "[2/4] 文件夹重命名命令测试"
+run folder rename --id "$C_ID" --name c2
+# 重新运行查询命令验证重命名结果
+echo "重新运行查询命令验证："
+run folder tree
+
+# [3/4] 文件夹移动命令测试：将 d 移动到 b 之下
+echo ""
+echo "[3/4] 文件夹移动命令测试"
+run folder move --id "$D_ID" --parent-id "$B_ID"
+# 重新运行查询命令验证移动结果
+echo "重新运行查询命令验证："
+run folder tree
+
+# [4/4] 文件夹删除命令测试：删除 d
+echo ""
+echo "[4/4] 文件夹删除命令测试"
+run folder delete --id "$D_ID"
+# 重新运行查询命令验证删除结果
+echo "重新运行查询命令验证："
+run folder tree
 
 echo ""
 echo "==> All CRUD tests completed."

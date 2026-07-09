@@ -3,3 +3,4 @@ target/
 *.db
 .github/
 *_test.html
+*.sql

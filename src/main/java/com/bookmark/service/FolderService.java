@@ -133,25 +133,35 @@ public class FolderService {
      * 创建文件夹，校验同级名称唯一性后写入数据库。
      */
     public int createFolder(String name, Integer parentId) {
+        // 1. 无显式 isRoot 标记时，parentId 为 NULL 即视为根文件夹
+        return createFolder(name, parentId, parentId == null);
+    }
+
+    /**
+     * 创建文件夹，支持显式指定是否为根文件夹（--root 场景）。
+     * 当 {@code isRoot} 为 {@code true} 时忽略 {@code parentId}，强制成为独立根文件夹。
+     */
+    public int createFolder(String name, Integer parentId, boolean isRoot) {
         // 1. 校验名称非空
         requireNonBlank(name, "name");
-        // 2. 若指定父文件夹，校验其存在性
-        if (parentId != null) {
-            requirePositive(parentId, "parentId");
-            if (folderDAO.queryById(parentId) == null) {
-                throw new IllegalArgumentException("Parent folder does not exist: " + parentId);
+        // 2. 根文件夹忽略父 id；否则校验父文件夹存在性
+        Integer effectiveParent = isRoot ? null : parentId;
+        if (effectiveParent != null) {
+            requirePositive(effectiveParent, "parentId");
+            if (folderDAO.queryById(effectiveParent) == null) {
+                throw new IllegalArgumentException("Parent folder does not exist: " + effectiveParent);
             }
         }
         // 3. 检查同级名称冲突
-        if (folderDAO.existsByNameAndParent(name, parentId)) {
+        if (folderDAO.existsByNameAndParent(name, effectiveParent)) {
             throw new IllegalArgumentException("Folder '" + name + "' already exists under the same parent");
         }
 
         // 4. 组装实体并设置默认时间字段
         Folder folder = new Folder();
         folder.setName(name);
-        folder.setParentId(parentId);
-        folder.setRoot(parentId == null);
+        folder.setParentId(effectiveParent);
+        folder.setRoot(isRoot);
         LocalDateTime now = LocalDateTime.now();
         folder.setAddDate(now);
         folder.setLastModified(now);
