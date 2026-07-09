@@ -26,13 +26,13 @@ run() {
   mvn exec:java -Dexec.mainClass="$APP_CLASS" -Dexec.args="$args" -q
 }
 
-# # [1/6] 新增多条书签，并捕获自动生成的主键 id
-# echo ""
-# echo "[1/6] Adding bookmarks"
-# ID1=$(run add --url "https://python.org"     --title \"Python Official Site\" --icon "py.png"  --category "Dev"    | sed -n 's/.*id=\([0-9]*\).*/\1/p')
-# ID2=$(run add --url "https://docs.python.org" --title \"Python Docs\"          --icon "doc.png" --category "Dev"    | sed -n 's/.*id=\([0-9]*\).*/\1/p')
-# ID3=$(run add --url "https://github.com"      --title \"GitHub\"               --icon "gh.png"  --category "Social" | sed -n 's/.*id=\([0-9]*\).*/\1/p')
-# echo "Captured ids: ID1=$ID1 ID2=$ID2 ID3=$ID3"
+# [1/6] 新增多条书签，并捕获自动生成的主键 id
+echo ""
+echo "[1/6] Adding bookmarks"
+ID1=$(run add --url "https://python.org"     --title \"Python Official Site\" --icon "py.png"  --category "Dev"    | sed -n 's/.*id=\([0-9]*\).*/\1/p')
+ID2=$(run add --url "https://docs.python.org" --title \"Python Docs\"          --icon "doc.png" --category "Dev"    | sed -n 's/.*id=\([0-9]*\).*/\1/p')
+ID3=$(run add --url "https://github.com"      --title \"GitHub\"               --icon "gh.png"  --category "Social" | sed -n 's/.*id=\([0-9]*\).*/\1/p')
+echo "Captured ids: ID1=$ID1 ID2=$ID2 ID3=$ID3"
 
 # # [2/6] 列出全部书签
 # echo ""
@@ -60,15 +60,15 @@ run() {
 # echo "[6/6] Deleting entry id=$ID3"
 # run delete --id "$ID3"
 
-# [1/2] 导入命令测试：从示例 HTML 文件导入书签
-echo ""
-echo "[1/2] 导入命令测试"
-run import --file src/main/java/com/bookmark/html/example.html
+# # [1/2] 导入命令测试：从示例 HTML 文件导入书签
+# echo ""
+# echo "[1/2] 导入命令测试"
+# run import --file src/main/java/com/bookmark/html/example.html
 
-# [2/2] 导出命令测试：将全部书签导出到指定 HTML 文件
-echo ""
-echo "[2/2] 导出命令测试"
-run export --output cli_export_test.html
+# # [2/2] 导出命令测试：将全部书签导出到指定 HTML 文件
+# echo ""
+# echo "[2/2] 导出命令测试"
+# run export --output cli_export_test.html
 
 # # [1/4] 文件夹新增命令测试：创建与 in.sql 一致的文件夹结构（a 根 -> b -> c，a -> d）
 # echo ""

@@ -4,7 +4,6 @@ import com.bookmark.model.Folder;
 import com.bookmark.service.FolderService;
 import picocli.CommandLine;
 
-import java.util.List;
 import java.util.concurrent.Callable;
 
 /**

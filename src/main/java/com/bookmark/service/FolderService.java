@@ -17,6 +17,7 @@ import java.util.Queue;
 /**
  * 文件夹业务逻辑层：在 DAO 之上封装树构建、校验与持久化编排。
  */
+// TODO: 修缮代码风格
 public class FolderService {
 
     private final FolderDAO folderDAO;
@@ -109,6 +110,19 @@ public class FolderService {
         return folderDAO.queryById(folderId);
     }
 
+    public Integer getFolderIdByName(String folderName) {
+        // 1. 校验名称非空
+        requireNonBlank(folderName, "folderName");
+        // 2. 构造查询条件，固定返回全部分页结果
+        Folder criteria = new Folder();
+        criteria.setName(folderName);
+        List<Folder> result = folderDAO.query(criteria, 1, 1, "id");
+        if (result.isEmpty()) {
+            return null;
+        }
+        return result.get(0).getId();
+    }
+
     /**
      * 查询全部文件夹（用于根节点发现与扁平遍历）。
      */
@@ -169,6 +183,27 @@ public class FolderService {
         int id = folderDAO.insert(folder);
         folder.setId(id);
         return id;
+    }
+
+    /**
+     * 递归插入文件夹：写入数据库并回填自增 id，再按 parentId 下钻子文件夹。
+     *
+     * @param folder   当前文件夹节点
+     * @param parentId 父文件夹数据库 id（顶层为 {@code null}）
+     * @return 本次递归插入的文件夹数量（含自身）
+     */
+    public int insertFolder(Folder folder, Integer parentId) {
+        // 1. 设置父级 id（顶层文件夹 parentId 为 null，将被标记 is_root）
+        folder.setParentId(parentId);
+        // 2. 持久化并取回数据库自增主键
+        int id = folderDAO.insert(folder);
+        folder.setId(id);
+        // 3. 递归处理子文件夹，parentId 指向当前文件夹的数据库 id
+        int count = 1;
+        for (Folder child : folder.getChildren().values()) {
+            count += insertFolder(child, id);
+        }
+        return count;
     }
 
     /**
@@ -253,6 +288,13 @@ public class FolderService {
         folderDAO.deleteById(folderId);
     }
 
+    public void clearAllFolders() {
+        // 1. 删除所有书签
+        bookmarkDAO.deleteAll();
+        // 2. 删除所有文件夹
+        folderDAO.deleteAll();
+    }
+
     /**
      * 查询指定文件夹下的所有书签。
      */
@@ -329,4 +371,5 @@ public class FolderService {
             throw new IllegalArgumentException("Field '" + field + "' must be a positive integer");
         }
     }
+
 }

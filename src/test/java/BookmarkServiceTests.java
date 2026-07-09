@@ -57,7 +57,7 @@ class BookmarkServiceTests {
         folderService = new FolderService();
         dao = new BookmarkDAO();
         folderDao = new FolderDAO();
-        service = new BookmarkService(dao, folderDao, folderService);
+        service = new BookmarkService(dao, folderService);
         clearCategory(CATEGORY);
     }
 
