@@ -6,10 +6,12 @@ import com.bookmark.html.HtmlBookmarkParser;
 import com.bookmark.html.HtmlBookmarkWriter;
 import com.bookmark.model.BatchResult;
 import com.bookmark.model.Bookmark;
+import com.bookmark.model.Folder;
 
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -166,8 +168,9 @@ public class BookmarkService {
         // 1. 校验文件路径非空
         requireNonBlank(filePath, "filePath");
 
-        // 2. 解析 HTML 得到书签列表
-        List<Bookmark> parsed = parseHtml(new File(filePath));
+        // 2. 解析 HTML 得到层级树并展平为书签列表
+        Folder root = htmlParser.parse(new File(filePath));
+        List<Bookmark> parsed = flatten(root);
 
         // 3. 批量插入（跳过约束冲突记录），返回成功/失败统计
         BatchResult result = bookmarkDAO.batchInsertSkipErrors(parsed);
@@ -194,13 +197,14 @@ public class BookmarkService {
         return all.size();
     }
 
-    /** 调用 HTML 解析器，将 IO 异常包装为运行时异常。 */
-    private List<Bookmark> parseHtml(File file) {
-        try {
-            return htmlParser.parse(file);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to parse bookmark HTML: " + file, e);
+    /** 将层级文件夹树展平为书签列表（书签已携带 category 路径）。 */
+    private List<Bookmark> flatten(Folder folder) {
+        List<Bookmark> out = new ArrayList<>();
+        for (Folder child : folder.getChildren().values()) {
+            out.addAll(child.getBookmarks());
+            out.addAll(flatten(child));
         }
+        return out;
     }
 
     private Integer parseCategory(String category) {

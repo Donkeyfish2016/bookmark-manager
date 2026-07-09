@@ -3,6 +3,7 @@ import com.bookmark.db.DatabaseMgr;
 import com.bookmark.html.HtmlBookmarkParser;
 import com.bookmark.model.BatchResult;
 import com.bookmark.model.Bookmark;
+import com.bookmark.model.Folder;
 import com.bookmark.service.BookmarkService;
 import com.bookmark.service.FolderService;
 
@@ -14,6 +15,7 @@ import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -262,11 +264,21 @@ class BookmarkServiceTests {
         assertTrue(content.startsWith("<!DOCTYPE NETSCAPE-Bookmark-file-1>"));
 
         // 4. 回灌解析，应包含刚插入的标记书签
-        List<Bookmark> roundTrip = new HtmlBookmarkParser().parse(out);
+        Folder root = new HtmlBookmarkParser().parse(out);
+        List<Bookmark> roundTrip = new ArrayList<>();
+        collectAll(root, roundTrip);
         assertTrue(roundTrip.stream().anyMatch(b -> "https://export-verify.com".equals(b.getUrl())));
     }
 
     // ---- 辅助方法 ----
+
+    /** 递归收集整棵文件夹树中的所有书签。 */
+    private void collectAll(Folder folder, List<Bookmark> out) {
+        out.addAll(folder.getBookmarks());
+        for (Folder child : folder.getChildren().values()) {
+            collectAll(child, out);
+        }
+    }
 
     /** 删除指定测试分类下的所有记录，保证用例隔离。 */
     private void clearCategory(String category) {
