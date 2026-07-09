@@ -109,6 +109,11 @@ public class BookmarkDAO {
         return result;
     }
 
+    /** 查询全部书签，供业务层构建树结构。 */
+    public List<Bookmark> findAll() {
+        return query(null, 1, Integer.MAX_VALUE);
+    }
+
     /**
      * 根据主键查询单条书签。
      *

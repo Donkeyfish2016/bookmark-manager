@@ -10,6 +10,7 @@ import com.bookmark.cli.SearchCommand;
 import com.bookmark.cli.UpdateCommand;
 import com.bookmark.db.BookmarkDAO;
 import com.bookmark.db.DatabaseMgr;
+import com.bookmark.db.FolderDAO;
 import com.bookmark.service.BookmarkService;
 import com.bookmark.service.FolderService;
 
@@ -29,7 +30,7 @@ public class App {
         DatabaseMgr.initialize();
 
         // 2. 组装服务层（DAO -> Service）
-        FolderService folderService = new FolderService();
+        FolderService folderService = new FolderService(new FolderDAO(), new BookmarkDAO());
         BookmarkService service = new BookmarkService(new BookmarkDAO(), folderService);
 
         // 3. 构建命令树：根命令 + 各子命令（注入 service）
