@@ -110,6 +110,14 @@ public class FolderService {
     }
 
     /**
+     * 查询全部文件夹（用于根节点发现与扁平遍历）。
+     */
+    public List<Folder> getAllFolders() {
+        // 1. 委托 DAO 返回全部文件夹
+        return folderDAO.queryAll();
+    }
+
+    /**
      * 查询指定父文件夹下的直接子文件夹。
      */
     public List<Folder> getSubFolders(int parentId) {

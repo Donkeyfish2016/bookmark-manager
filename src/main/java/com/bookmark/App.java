@@ -8,6 +8,10 @@ import com.bookmark.cli.ListCommand;
 import com.bookmark.cli.MainCommand;
 import com.bookmark.cli.SearchCommand;
 import com.bookmark.cli.UpdateCommand;
+import com.bookmark.cli.folder.FolderCommand;
+import com.bookmark.cli.folder.FolderInfoCommand;
+import com.bookmark.cli.folder.FolderListCommand;
+import com.bookmark.cli.folder.FolderTreeCommand;
 import com.bookmark.db.BookmarkDAO;
 import com.bookmark.db.DatabaseMgr;
 import com.bookmark.db.FolderDAO;
@@ -41,7 +45,11 @@ public class App {
                 .addSubcommand("search", new SearchCommand(service))
                 .addSubcommand("update", new UpdateCommand(service))
                 .addSubcommand("import", new ImportCommand(service))
-                .addSubcommand("export", new ExportCommand(service));
+                .addSubcommand("export", new ExportCommand(service))
+                .addSubcommand("folder", new CommandLine(new FolderCommand(folderService))
+                        .addSubcommand("tree", new FolderTreeCommand(folderService))
+                        .addSubcommand("list", new FolderListCommand(folderService))
+                        .addSubcommand("info", new FolderInfoCommand(folderService)));
 
         // 4. 解析参数并执行，返回退出码
         int exitCode = commandLine.execute(args);

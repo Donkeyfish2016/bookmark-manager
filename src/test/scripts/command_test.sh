@@ -70,5 +70,20 @@ echo ""
 echo "[2/2] 导出命令测试"
 run export --output cli_export_test.html
 
+# [1/3] 文件夹树命令测试：以 ASCII 树状结构展示文件夹层级
+echo ""
+echo "[1/3] 文件夹树命令测试"
+run folder tree
+
+# [2/3] 文件夹列表命令测试：表格展示根文件夹（收藏夹栏）的直接子文件夹
+echo ""
+echo "[2/3] 文件夹列表命令测试"
+run folder list
+
+# [3/3] 文件夹详情命令测试：展示指定 ID 文件夹的详细元数据
+echo ""
+echo "[3/3] 文件夹详情命令测试"
+run folder info --id 1
+
 echo ""
 echo "==> All CRUD tests completed."
