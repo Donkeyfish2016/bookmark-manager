@@ -110,7 +110,7 @@ public class BookmarkDAO {
     }
 
     /** 查询全部书签，供业务层构建树结构。 */
-    public List<Bookmark> findAll() {
+    public List<Bookmark> queryAll() {
         return query(null, 1, Integer.MAX_VALUE);
     }
 

@@ -173,11 +173,6 @@ public class FolderDAO {
         return result;
     }
 
-    /** 查询全部文件夹，供业务层构建树结构。 */
-    public List<Folder> findAll() {
-        return queryAll();
-    }
-
     public boolean existsByNameAndParent(String name, Integer parentId) {
         String sql = parentId == null
                 ? "SELECT COUNT(*) FROM folders WHERE name = ? AND parent_id IS NULL"

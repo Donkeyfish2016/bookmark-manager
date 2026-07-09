@@ -43,8 +43,8 @@ public class FolderService {
      * 构建完整的文件夹树，根节点为虚拟根节点，子节点与书签按层级挂载。
      */
     public Folder loadFolderTree() {
-        List<Folder> folders = folderDAO.findAll();
-        List<Bookmark> bookmarks = bookmarkDAO.findAll();
+        List<Folder> folders = folderDAO.queryAll();
+        List<Bookmark> bookmarks = bookmarkDAO.queryAll();
 
         Folder root = new Folder();
         root.setId(0);
@@ -234,7 +234,7 @@ public class FolderService {
         }
 
         Map<Integer, List<Integer>> childrenByParent = new LinkedHashMap<>();
-        for (Folder folder : folderDAO.findAll()) {
+        for (Folder folder : folderDAO.queryAll()) {
             Integer parentId = folder.getParentId();
             if (parentId == null) {
                 continue;

@@ -74,7 +74,7 @@ def main():
         sys.exit(0)
 
     # 3. 固定信息
-    agent_type = "Capilot"
+    agent_type = "Kilo Code"
     dev_language = "Java"
 
     # 4. 计算轮次序号
