@@ -78,7 +78,7 @@ def main():
     dev_language = "Java"
 
     # 4. 计算轮次序号
-    log_file = "record.jsonl"
+    log_file = "D:\\winter_study\\assessment\\record.jsonl"
     round_id = 1
     try:
         with open(log_file, "r", encoding="utf-8") as f:
