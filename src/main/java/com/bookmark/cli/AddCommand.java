@@ -37,7 +37,7 @@ public class AddCommand implements Callable<Integer> {
     @CommandLine.Option(names = {"-i", "--icon"}, description = "Icon URL or path.", required = false)
     private String icon;
 
-    @CommandLine.Option(names = {"-c", "--category"}, description = "Category or folder name.", defaultValue = "default", required = false)
+    @CommandLine.Option(names = {"-c", "--category"}, description = "Category or folder name.", defaultValue = "收藏夹栏", required = false)
     private String category;
 
     /**

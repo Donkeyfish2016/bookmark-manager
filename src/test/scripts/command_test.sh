@@ -16,7 +16,7 @@ clean_db() {
 
 # 运行 JAR 并合并 stdout+stderr
 run() {
-    java -jar "$JAR" "$@" 2>&1
+    java --enable-native-access=ALL-UNNAMED -jar "$JAR" "$@" 2>&1
 }
 
 # 从 add 输出提取书签 ID
@@ -391,10 +391,10 @@ clean_db
 
 # [37/42] TC-IE-01 ExportBookmarks test: export bookmarks to HTML file
 run add -u "https://export-test.com" -t "ExportTest" -c "default" >/dev/null
-OUTPUT=$(run export -o test_export.html)
+OUTPUT=$(run export -o export_test.html)
 assert_exit_code 0 $? "TC-IE-01 exit code"
-assert_contains "$OUTPUT" "test_export.html" "TC-IE-01 export filename"
-if [ -f "test_export.html" ]; then
+assert_contains "$OUTPUT" "export_test.html" "TC-IE-01 export filename"
+if [ -f "export_test.html" ]; then
     echo "[PASS] TC-IE-01 file created"
     PASS=$((PASS + 1))
 else
@@ -404,7 +404,7 @@ fi
 
 # [38/42] TC-IE-02 ImportBookmarks test: import from HTML and verify
 # 使用已导出的文件作为导入源
-cp test_export.html cli_export_test.html
+cp export_test.html cli_export_test.html
 OUTPUT=$(run import -f cli_export_test.html)
 assert_exit_code 0 $? "TC-IE-02 exit code"
 assert_contains "$OUTPUT" "导入完成" "TC-IE-02 import complete message"
@@ -471,3 +471,4 @@ if [ "$FAIL" -eq 0 ]; then
 else
     echo "==> $FAIL test(s) FAILED."
 fi
+rm -f export_test.html cli_export_test.html
