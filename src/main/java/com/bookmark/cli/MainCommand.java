@@ -1,5 +1,14 @@
 package com.bookmark.cli;
 
+import com.bookmark.cli.AddCommand;
+import com.bookmark.cli.DeleteCommand;
+import com.bookmark.cli.EmailCommand;
+import com.bookmark.cli.ExportCommand;
+import com.bookmark.cli.ImportCommand;
+import com.bookmark.cli.ListCommand;
+import com.bookmark.cli.SearchCommand;
+import com.bookmark.cli.ShellCommand;
+import com.bookmark.cli.UpdateCommand;
 import com.bookmark.cli.folder.FolderAddCommand;
 import com.bookmark.cli.folder.FolderCommand;
 import com.bookmark.cli.folder.FolderDeleteCommand;
@@ -59,6 +68,7 @@ public class MainCommand implements Callable<Integer> {
                 .addSubcommand("update", new UpdateCommand(service))
                 .addSubcommand("import", new ImportCommand(service))
                 .addSubcommand("export", new ExportCommand(service))
+                .addSubcommand("email", new EmailCommand(service))
                 .addSubcommand("shell", new ShellCommand(service))
                 // 3. folder 命令组：以 FolderCommand 为节点，挂载其只读/写子命令
                 .addSubcommand("folder", new CommandLine(new FolderCommand(folderService))

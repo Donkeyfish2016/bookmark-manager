@@ -1,9 +1,21 @@
 package com.bookmark.service;
 
 import java.io.File;
+import java.util.Properties;
 
+import jakarta.activation.DataHandler;
+import jakarta.activation.DataSource;
+import jakarta.activation.FileDataSource;
+import jakarta.mail.Authenticator;
+import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
+import jakarta.mail.PasswordAuthentication;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
 
 /**
  * <p>
@@ -45,11 +57,46 @@ public class EmailService {
      */
     public void sendHtmlEmail(String to, String subject, File attachment) throws MessagingException {
         // 1. 主题若为 null 或空，则默认使用“书签分享”
+        if (subject == null || subject.isBlank()) {
+            subject = "书签分享";
+        }
+
+        Properties props = new Properties();
+        props.put("mail.smtp.host", host);
+        props.put("mail.smtp.port", String.valueOf(port));
+        props.put("mail.smtp.auth", String.valueOf(auth));
+        props.put("mail.smtp.starttls.enable", String.valueOf(starttls));
+
+        Authenticator authenticator = auth ? new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(username, password);
+            }
+        } : null;
+
+        Session session = Session.getInstance(props, authenticator);
 
         // 2. 正文为纯文本“来看看我的书签吧~”，编码 UTF-8
+        MimeMessage message = new MimeMessage(session);
+        message.setFrom(new InternetAddress(username));
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
+        message.setSubject(subject, "UTF-8");
+
+        MimeBodyPart textPart = new MimeBodyPart();
+        textPart.setText("来看看我的书签吧~", "UTF-8");
 
         // 3. 附件部分将传入的 attachment 作为 MimeBodyPart 附加。
+        MimeBodyPart attachmentPart = new MimeBodyPart();
+        DataSource source = new FileDataSource(attachment);
+        attachmentPart.setDataHandler(new DataHandler(source));
+        attachmentPart.setFileName(attachment.getName());
+
+        MimeMultipart multipart = new MimeMultipart();
+        multipart.addBodyPart(textPart);
+        multipart.addBodyPart(attachmentPart);
 
         // 4. 使用 Transport.send() 发送。
+        message.setContent(multipart);
+        Transport.send(message);
     }
 }

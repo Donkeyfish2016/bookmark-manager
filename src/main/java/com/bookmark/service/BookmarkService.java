@@ -7,6 +7,7 @@ import com.bookmark.model.BatchResult;
 import com.bookmark.model.Bookmark;
 import com.bookmark.model.Folder;
 import com.bookmark.model.ImportResult;
+import com.bookmark.service.EmailService;
 
 import java.io.File;
 import java.io.IOException;
@@ -278,9 +279,20 @@ public class BookmarkService {
                                String smtpHost, int smtpPort, 
                                String smtpUser, String smtpPass, 
                                boolean starttls) {
-        // 1. 导出html文件到临时文件
+        
+        try {
+            // 1. 导出html文件到临时文件
+            File tempFile = File.createTempFile("bookmarks", ".html");
+            tempFile.deleteOnExit();
+            int exported = exportToHtml(tempFile.getAbsolutePath());
+            System.out.println("成功导出 " + exported + " 条书签到临时文件");
 
-        // 2. 调用EamilService发送邮件
+            // 2. 调用EamilService发送邮件
+            EmailService emailService = new EmailService(smtpHost, smtpPort, smtpUser, smtpPass, true, starttls);
+            emailService.sendHtmlEmail(to, subject, tempFile);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send email bookmarks: " + e.getMessage(), e);
+        }
     }
 
     /** 默认文件夹名：用于兜底收纳无法解析所属文件夹的书签。 */
