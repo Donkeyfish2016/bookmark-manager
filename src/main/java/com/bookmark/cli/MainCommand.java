@@ -11,7 +11,7 @@ import java.util.concurrent.Callable;
  * @author DonkeyFish
  * @since 2026-7-7
  */
-@CommandLine.Command(name = "bm",
+@CommandLine.Command(name = "bookmark",
         description = "Edge browser bookmark manager.",
         mixinStandardHelpOptions = true,
         subcommands = {})

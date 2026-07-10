@@ -222,17 +222,27 @@ public class BookmarkService {
      * @return 导出的书签数量
      */
     public int exportToHtml(String outputPath) {
-        // 1. 校验输出路径非空
         requireNonBlank(outputPath, "outputPath");
 
-        // 2. 读取全部书签并交给 HTML 写出器，返回导出数量
-        List<Bookmark> all = listAll();
+        Folder folderTree = folderService.loadFolderTree();
         try {
-            htmlWriter.write(all, new File(outputPath));
+            htmlWriter.write(folderTree, new File(outputPath));
         } catch (IOException e) {
             throw new RuntimeException("Failed to export bookmarks to: " + outputPath, e);
         }
-        return all.size();
+        int count = 0;
+        for (Folder child : folderTree.getChildren().values()) {
+            count += countBookmarks(child);
+        }
+        return count;
+    }
+
+    private int countBookmarks(Folder folder) {
+        int count = folder.getBookmarks().size();
+        for (Folder child : folder.getChildren().values()) {
+            count += countBookmarks(child);
+        }
+        return count;
     }
 
     /** 默认文件夹名：用于兜底收纳无法解析所属文件夹的书签。 */

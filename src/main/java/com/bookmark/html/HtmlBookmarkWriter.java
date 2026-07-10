@@ -9,20 +9,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * <p>
- * 生成标准Edge浏览器书签HTML
+ * 生成标准 Netscape Bookmark HTML 文件，兼容 Chrome 和 Firefox
  * </p>
  *
  * @author DonkeyFish
  * @since 2026-7-8
  */
-// TODO: 明天整顿导出功能
 public class HtmlBookmarkWriter {
 
     private static final String DEFAULT_ROOT_FOLDER = "收藏夹栏";
@@ -36,10 +31,13 @@ public class HtmlBookmarkWriter {
             + "<DL><p>\n";
 
     /**
-     * 将书签列表写入 Netscape Bookmark HTML 文件。
+     * 将文件夹树写入 Netscape Bookmark HTML 文件。
+     *
+     * @param rootFolder 根文件夹树（包含所有顶级文件夹和它们的子文件夹/书签）
+     * @param outputFile 输出文件路径
+     * @throws IOException 如果写入文件失败
      */
-    public void write(List<Bookmark> bookmarks, File outputFile) throws IOException {
-        // 1. 校验输入并准备输出目录
+    public void write(Folder rootFolder, File outputFile) throws IOException {
         if (outputFile == null) {
             throw new IllegalArgumentException("outputFile must not be null");
         }
@@ -48,73 +46,28 @@ public class HtmlBookmarkWriter {
             parent.mkdirs();
         }
 
-        // 2. 构建文件夹树
-        // 2.1 顶级文件夹映射：文件夹名 -> FolderNode
-        Map<String, Folder> topFolders = new LinkedHashMap<>();
-        Folder defaultFolder = new Folder(DEFAULT_ROOT_FOLDER, false);
-        // 2.2 遍历书签列表，填充顶级文件夹映射
-        for (Bookmark bookmark : bookmarks) {
-            String category = bookmark.getCategory();
-            if (category == null || category.isBlank()) {
-                defaultFolder.getBookmarks().add(bookmark);
-            } else {
-                String[] parts = category.split("/");
-                String topFolderName = parts[0];
-                Folder topFolder = topFolders.computeIfAbsent(topFolderName, key -> new Folder(key, false));
-                // 递归添加书签到对应的文件夹节点
-                addBookmark(topFolder, bookmark);
-            }
-        }
-        // 2.3 处理默认
-        if (!defaultFolder.getBookmarks().isEmpty()) {
-            topFolders.put(DEFAULT_ROOT_FOLDER, defaultFolder);
-        }
-
-        // 3. 生成 HTML 内容并写入文件
         StringBuilder builder = new StringBuilder();
         builder.append(HEADER);
-        for (Folder root : topFolders.values()) {
-            boolean isToolbar = root.getName().equals("收藏夹栏");
-            appendFolder(builder, root, 0, isToolbar);
+
+        for (Folder childFolder : rootFolder.getChildren().values()) {
+            boolean isToolbar = DEFAULT_ROOT_FOLDER.equals(childFolder.getName());
+            appendFolder(builder, childFolder, 0, isToolbar);
         }
+
         builder.append("</DL><p>\n");
         Files.writeString(outputFile.toPath(), builder.toString(), StandardCharsets.UTF_8);
     }
 
     /**
-     * 根据分类路径创建或复用文件夹节点，并将书签挂到对应叶子节点。
-     */
-    private void addBookmark(Folder root, Bookmark bookmark) {
-        if (bookmark == null) {
-            return;
-        }
-
-        String category = bookmark.getCategory();
-        if (category == null || category.isBlank()) {
-            root.getBookmarks().add(bookmark);
-            return;
-        }
-
-        String[] parts = category.split("/");
-        Folder current = root;
-        for (int i = 1; i < parts.length; i++) { // 从第二部分开始，因为第一部分已经是顶级文件夹
-            String part = parts[i];
-            if (part == null || part.isBlank()) {
-                continue;
-            }
-            current = current.getOrCreateChild(part);
-        }
-        current.getBookmarks().add(bookmark);
-    }
-
-    /**
-     * 递归把文件夹树转成 Netscape Bookmark HTML 片段。
+     * 递归将文件夹树转成 Netscape Bookmark HTML 片段。
      */
     private void appendFolder(StringBuilder builder, Folder folder, int depth, boolean isToolbar) {
         String indent = "    ".repeat(depth);
+        long timestamp = getTimestamp(folder.getAddDate());
+
         builder.append(indent).append("<DT><H3")
-                .append(" ADD_DATE=\"").append(formatTimestamp(System.currentTimeMillis() / 1000L))
-                .append("\" LAST_MODIFIED=\"").append(formatTimestamp(System.currentTimeMillis() / 1000L))
+                .append(" ADD_DATE=\"").append(timestamp)
+                .append("\" LAST_MODIFIED=\"").append(getTimestamp(folder.getLastModified()))
                 .append("\"");
         if (isToolbar) {
             builder.append(" PERSONAL_TOOLBAR_FOLDER=\"true\"");
@@ -135,12 +88,12 @@ public class HtmlBookmarkWriter {
     }
 
     /**
-     * 把单个书签输出为标准链接节点。
+     * 将单个书签输出为标准链接节点。
      */
     private void appendBookmark(StringBuilder builder, Bookmark bookmark, int depth) {
         String indent = "    ".repeat(depth);
         builder.append(indent).append("<DT><A HREF=\"").append(escapeHtml(bookmark.getUrl()))
-                .append("\" ADD_DATE=\"").append(formatTimestamp(bookmark.getAddDate()))
+                .append("\" ADD_DATE=\"").append(getTimestamp(bookmark.getAddDate()))
                 .append("\"");
         if (bookmark.getIcon() != null && !bookmark.getIcon().isBlank()) {
             builder.append(" ICON=\"").append(escapeHtml(bookmark.getIcon())).append("\"");
@@ -151,20 +104,13 @@ public class HtmlBookmarkWriter {
     }
 
     /**
-     * 将 LocalDateTime 转成 Unix 时间戳秒，缺省时返回 0。
+     * 将 LocalDateTime 转成 Unix 时间戳秒，缺省时返回当前时间戳。
      */
-    private String formatTimestamp(LocalDateTime addDate) {
-        if (addDate == null) {
-            return "0";
+    private long getTimestamp(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return System.currentTimeMillis() / 1000L;
         }
-        return String.valueOf(addDate.toInstant(ZoneOffset.UTC).getEpochSecond());
-    }
-
-    /**
-     * 将 Unix 时间戳秒转成字符串，便于文件夹使用当前时间。
-     */
-    private String formatTimestamp(long epochSecond) {
-        return String.valueOf(epochSecond);
+        return dateTime.toInstant(ZoneOffset.UTC).getEpochSecond();
     }
 
     /**
