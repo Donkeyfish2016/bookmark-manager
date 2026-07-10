@@ -45,9 +45,10 @@ public class ShellCommand implements Runnable {
         });
 
         // 3. 启动 REPL 循环，逐行读取并分发到对应子命令
+        System.out.print("bookmark> ");
+        System.out.flush();
         try (Scanner scanner = new Scanner(System.in)) {
             while (scanner.hasNextLine()) {
-                System.out.print("bookmark> ");
                 String line = scanner.nextLine().trim();
 
                 // 4. 跳过空行
@@ -68,6 +69,8 @@ public class ShellCommand implements Runnable {
                 } catch (Exception e) {
                     System.out.println("Error: " + e.getMessage());
                 }
+                System.out.print("bookmark> ");
+                System.out.flush();
             }
         }
     }

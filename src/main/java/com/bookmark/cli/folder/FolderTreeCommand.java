@@ -50,7 +50,7 @@ public class FolderTreeCommand implements Callable<Integer> {
         }
 
         // 3. 打印根节点，再递归打印其子节点
-        System.out.println(root.getName() + " (" + directBookmarkCount(root) + " bookmarks)");
+        System.out.println(root.getName() + " (id=" + root.getId() + ", " + directBookmarkCount(root) + " bookmarks)");
         List<Folder> children = folderService.getSubFolders(root.getId());
         for (int i = 0; i < children.size(); i++) {
             printNode(children.get(i), "", i == children.size() - 1);
@@ -69,7 +69,7 @@ public class FolderTreeCommand implements Callable<Integer> {
         // 1. 使用 ├── / └── 表示当前节点与父节点的连接关系
         String branch = isLast ? "└── " : "├── ";
         System.out.println(indent + branch
-                + folder.getName() + " (" + directBookmarkCount(folder) + " bookmarks)");
+                + folder.getName() + " (id=" + folder.getId() + ", " + directBookmarkCount(folder) + " bookmarks)");
 
         // 2. 计算子节点的缩进：末尾节点用空格，否则用竖线占位
         String childIndent = indent + (isLast ? "    " : "│   ");

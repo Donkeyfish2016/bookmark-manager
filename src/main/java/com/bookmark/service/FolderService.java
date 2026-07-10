@@ -17,7 +17,6 @@ import java.util.Queue;
 /**
  * 文件夹业务逻辑层：在 DAO 之上封装树构建、校验与持久化编排。
  */
-// TODO: 修缮代码风格
 public class FolderService {
 
     private final FolderDAO folderDAO;

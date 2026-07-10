@@ -47,7 +47,7 @@ class BookmarkServiceTests {
     Path tempDir;
 
     // 导出测试用的独立分类前缀，避免与既有用例数据相互干扰
-    private static final String EXPORT_CATEGORY = "EXP_TEST";
+    // private static final String EXPORT_CATEGORY = "EXP_TEST";
 
     // 1. 初始化数据库连接与表结构
     @BeforeAll

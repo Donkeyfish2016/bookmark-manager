@@ -264,8 +264,27 @@ public class BookmarkService {
         return count;
     }
 
+    /**
+     * 发送书签 HTML 文件到指定邮箱。
+     * @param to
+     * @param subject
+     * @param smtpHost
+     * @param smtpPort
+     * @param smtpUser
+     * @param smtpPass
+     * @param starttls
+     */
+    public void emailBookmarks(String to, String subject, 
+                               String smtpHost, int smtpPort, 
+                               String smtpUser, String smtpPass, 
+                               boolean starttls) {
+        // 1. 导出html文件到临时文件
+
+        // 2. 调用EamilService发送邮件
+    }
+
     /** 默认文件夹名：用于兜底收纳无法解析所属文件夹的书签。 */
-    private static final String DEFAULT_FOLDER_NAME = "Bookmarks Bar";
+    private static final String DEFAULT_FOLDER_NAME = "Unknown Folder";
 
     private Integer parseCategory(String category) {
         // 2. 按照category拆解文件夹名称，获取或创建文件夹ID

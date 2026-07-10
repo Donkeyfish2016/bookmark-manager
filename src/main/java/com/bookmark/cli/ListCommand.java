@@ -67,11 +67,11 @@ public class ListCommand implements Callable<Integer> {
                 "\"id\":" + jsonValue(b.getId()) + "," +
                 "\"url\":" + jsonValue(b.getUrl()) + "," +
                 "\"title\":" + jsonValue(b.getTitle()) + "," +
-                "\"icon\":" + jsonValue(b.getIcon()) + "," +
+                // "\"icon\":" + jsonValue(b.getIcon()) + "," +
                 "\"category\":" + jsonValue(b.getCategory()) + "," +
                 "\"addDate\":" + jsonValue(b.getAddDate()) + "," +
-                "\"createTime\":" + jsonValue(b.getCreateTime()) + "," +
-                "\"updateTime\":" + jsonValue(b.getUpdateTime()) +
+                // "\"createTime\":" + jsonValue(b.getCreateTime()) + "," +
+                // "\"updateTime\":" + jsonValue(b.getUpdateTime()) +
                 "}";
     }
 
