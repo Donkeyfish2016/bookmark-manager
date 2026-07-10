@@ -61,6 +61,7 @@ public class EmailService {
             subject = "书签分享";
         }
 
+        // 2. 构建 JavaMail Session，配置 SMTP 连接参数
         Properties props = new Properties();
         props.put("mail.smtp.host", host);
         props.put("mail.smtp.port", String.valueOf(port));
@@ -90,7 +91,7 @@ public class EmailService {
 
         Session session = Session.getInstance(props, authenticator);
 
-        // 2. 正文为纯文本“来看看我的书签吧~”，编码 UTF-8
+        // 3. 正文为纯文本“来看看我的书签吧~”，编码 UTF-8
         MimeMessage message = new MimeMessage(session);
         message.setFrom(new InternetAddress(username));
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
@@ -99,7 +100,7 @@ public class EmailService {
         MimeBodyPart textPart = new MimeBodyPart();
         textPart.setText("来看看我的书签吧~", "UTF-8");
 
-        // 3. 附件部分将传入的 attachment 作为 MimeBodyPart 附加。
+        // 4. 附件部分将传入的 attachment 作为 MimeBodyPart 附加。
         MimeBodyPart attachmentPart = new MimeBodyPart();
         DataSource source = new FileDataSource(attachment);
         attachmentPart.setDataHandler(new DataHandler(source));
@@ -109,7 +110,7 @@ public class EmailService {
         multipart.addBodyPart(textPart);
         multipart.addBodyPart(attachmentPart);
 
-        // 4. 使用 Transport.send() 发送。
+        // 5. 使用 Transport.send() 发送。
         message.setContent(multipart);
         Transport.send(message);
     }

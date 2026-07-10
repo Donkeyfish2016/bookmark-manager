@@ -16,6 +16,7 @@ import java.util.concurrent.Callable;
  * @author DonkeyFish
  * @since 2026-7-10
  */
+// TODO: 进行docke部署
 @CommandLine.Command(name = "email", description = "Send all bookmarks as HTML via email.")
 public class EmailCommand implements Callable<Integer> {
 
@@ -48,6 +49,21 @@ public class EmailCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
+        // 环境变量作为默认值
+        if (smtpHost == null) smtpHost = System.getenv("SMTP_HOST");
+        if (smtpPort == 0) {
+            String portEnv = System.getenv("SMTP_PORT");
+            smtpPort = (portEnv != null) ? Integer.parseInt(portEnv) : 465;
+        }
+        if (smtpUser == null) smtpUser = System.getenv("SMTP_USER");
+        if (smtpPass == null) smtpPass = System.getenv("SMTP_PASS");
+
+        // 参数校验
+        if (smtpHost == null || smtpUser == null || smtpPass == null) {
+            System.err.println("必须提供SMTP连接信息（通过参数或环境变量）");
+            return 1;
+        }
+
         bookmarkService.emailBookmarks(to, subject, smtpHost, smtpPort, smtpUser, smtpPass, starttls);
         System.out.println("邮件已发送至：" + to);
         return 0;
