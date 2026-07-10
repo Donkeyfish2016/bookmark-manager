@@ -37,4 +37,13 @@ public class Folder {
     private LocalDateTime createTime;
     /** 记录最后更新时间（数据库自动填充） */
     private LocalDateTime updateTime;
+
+    public Folder(String name, boolean root) {
+        this.name = name;
+        this.root = root;
+    }
+
+    public Folder getOrCreateChild(String childName) {
+        return children.computeIfAbsent(childName, key -> new Folder(key, false));
+    }
 }

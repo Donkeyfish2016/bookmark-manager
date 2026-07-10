@@ -1,6 +1,7 @@
 package com.bookmark.html;
 
 import com.bookmark.model.Bookmark;
+import com.bookmark.model.Folder;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,15 +49,9 @@ public class HtmlBookmarkWriter {
         }
 
         // 2. 构建文件夹树
-        // FolderNode root = new FolderNode(DEFAULT_ROOT_FOLDER, true);
-        // if (bookmarks != null) {
-        //     for (Bookmark bookmark : bookmarks) {
-        //         addBookmark(root, bookmark);
-        //     }
-        // }
         // 2.1 顶级文件夹映射：文件夹名 -> FolderNode
-        Map<String, FolderNode> topFolders = new LinkedHashMap<>();
-        FolderNode defaultFolder = new FolderNode(DEFAULT_ROOT_FOLDER, false);
+        Map<String, Folder> topFolders = new LinkedHashMap<>();
+        Folder defaultFolder = new Folder(DEFAULT_ROOT_FOLDER, false);
         // 2.2 遍历书签列表，填充顶级文件夹映射
         for (Bookmark bookmark : bookmarks) {
             String category = bookmark.getCategory();
@@ -65,7 +60,7 @@ public class HtmlBookmarkWriter {
             } else {
                 String[] parts = category.split("/");
                 String topFolderName = parts[0];
-                FolderNode topFolder = topFolders.computeIfAbsent(topFolderName, key -> new FolderNode(key, false));
+                Folder topFolder = topFolders.computeIfAbsent(topFolderName, key -> new Folder(key, false));
                 // 递归添加书签到对应的文件夹节点
                 addBookmark(topFolder, bookmark);
             }
@@ -78,7 +73,7 @@ public class HtmlBookmarkWriter {
         // 3. 生成 HTML 内容并写入文件
         StringBuilder builder = new StringBuilder();
         builder.append(HEADER);
-        for (FolderNode root : topFolders.values()) {
+        for (Folder root : topFolders.values()) {
             boolean isToolbar = root.getName().equals("收藏夹栏");
             appendFolder(builder, root, 0, isToolbar);
         }
@@ -89,7 +84,7 @@ public class HtmlBookmarkWriter {
     /**
      * 根据分类路径创建或复用文件夹节点，并将书签挂到对应叶子节点。
      */
-    private void addBookmark(FolderNode root, Bookmark bookmark) {
+    private void addBookmark(Folder root, Bookmark bookmark) {
         if (bookmark == null) {
             return;
         }
@@ -101,7 +96,7 @@ public class HtmlBookmarkWriter {
         }
 
         String[] parts = category.split("/");
-        FolderNode current = root;
+        Folder current = root;
         for (int i = 1; i < parts.length; i++) { // 从第二部分开始，因为第一部分已经是顶级文件夹
             String part = parts[i];
             if (part == null || part.isBlank()) {
@@ -115,7 +110,7 @@ public class HtmlBookmarkWriter {
     /**
      * 递归把文件夹树转成 Netscape Bookmark HTML 片段。
      */
-    private void appendFolder(StringBuilder builder, FolderNode folder, int depth, boolean isToolbar) {
+    private void appendFolder(StringBuilder builder, Folder folder, int depth, boolean isToolbar) {
         String indent = "    ".repeat(depth);
         builder.append(indent).append("<DT><H3")
                 .append(" ADD_DATE=\"").append(formatTimestamp(System.currentTimeMillis() / 1000L))
@@ -130,7 +125,7 @@ public class HtmlBookmarkWriter {
                 .append(indent)
                 .append("<DL><p>\n");
 
-        for (FolderNode childFolder : folder.getChildren().values()) {
+        for (Folder childFolder : folder.getChildren().values()) {
             appendFolder(builder, childFolder, depth + 1, false);
         }
         for (Bookmark bookmark : folder.getBookmarks()) {
@@ -184,41 +179,5 @@ public class HtmlBookmarkWriter {
                 .replace("<", "&lt;")
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;");
-    }
-
-    /**
-     * 代表一个文件夹节点，维护子文件夹与直接书签。
-     */
-    // TODO: 目录节点重命名，可能需要重写设计表结构
-    private static class FolderNode {
-        private final String name;
-        private final boolean root;
-        private final Map<String, FolderNode> children = new LinkedHashMap<>();
-        private final List<Bookmark> bookmarks = new ArrayList<>();
-
-        private FolderNode(String name, boolean root) {
-            this.name = name;
-            this.root = root;
-        }
-
-        private FolderNode getOrCreateChild(String childName) {
-            return children.computeIfAbsent(childName, key -> new FolderNode(key, false));
-        }
-
-        private String getName() {
-            return name;
-        }
-
-        private boolean isRoot() {
-            return root;
-        }
-
-        private Map<String, FolderNode> getChildren() {
-            return children;
-        }
-
-        private List<Bookmark> getBookmarks() {
-            return bookmarks;
-        }
     }
 }
