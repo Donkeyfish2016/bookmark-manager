@@ -1,21 +1,7 @@
 package com.bookmark;
 
-import com.bookmark.cli.AddCommand;
-import com.bookmark.cli.DeleteCommand;
-import com.bookmark.cli.ExportCommand;
-import com.bookmark.cli.ImportCommand;
-import com.bookmark.cli.ListCommand;
 import com.bookmark.cli.MainCommand;
-import com.bookmark.cli.SearchCommand;
-import com.bookmark.cli.UpdateCommand;
-import com.bookmark.cli.folder.FolderAddCommand;
-import com.bookmark.cli.folder.FolderCommand;
-import com.bookmark.cli.folder.FolderDeleteCommand;
-import com.bookmark.cli.folder.FolderInfoCommand;
-import com.bookmark.cli.folder.FolderListCommand;
-import com.bookmark.cli.folder.FolderMoveCommand;
-import com.bookmark.cli.folder.FolderRenameCommand;
-import com.bookmark.cli.folder.FolderTreeCommand;
+import com.bookmark.cli.ShellCommand;
 import com.bookmark.db.BookmarkDAO;
 import com.bookmark.db.DatabaseMgr;
 import com.bookmark.db.FolderDAO;
@@ -41,25 +27,14 @@ public class App {
         FolderService folderService = new FolderService(new FolderDAO(), new BookmarkDAO());
         BookmarkService service = new BookmarkService(new BookmarkDAO(), folderService);
 
-        // 3. 构建命令树：根命令 + 各子命令（注入 service）
-        CommandLine commandLine = new CommandLine(new MainCommand())
-                .addSubcommand("add", new AddCommand(service))
-                .addSubcommand("delete", new DeleteCommand(service))
-                .addSubcommand("list", new ListCommand(service))
-                .addSubcommand("search", new SearchCommand(service))
-                .addSubcommand("update", new UpdateCommand(service))
-                .addSubcommand("import", new ImportCommand(service))
-                .addSubcommand("export", new ExportCommand(service))
-                .addSubcommand("folder", new CommandLine(new FolderCommand(folderService))
-                        .addSubcommand("tree", new FolderTreeCommand(folderService))
-                        .addSubcommand("list", new FolderListCommand(folderService))
-                        .addSubcommand("info", new FolderInfoCommand(folderService))
-                        .addSubcommand("add", new FolderAddCommand(folderService))
-                        .addSubcommand("delete", new FolderDeleteCommand(folderService))
-                        .addSubcommand("rename", new FolderRenameCommand(folderService))
-                        .addSubcommand("move", new FolderMoveCommand(folderService)));
+        // 3. 无参数时直接进入交互式 shell（不调用 System.exit，正常返回即可）
+        if (args.length == 0) {
+            new ShellCommand(service).run();
+            return;
+        }
 
-        // 4. 解析参数并执行，返回退出码
+        // 4. 有参数时走标准 picocli 执行流程（命令树含 shell 子命令）
+        CommandLine commandLine = MainCommand.buildCommandLine(service);
         int exitCode = commandLine.execute(args);
         System.exit(exitCode);
     }

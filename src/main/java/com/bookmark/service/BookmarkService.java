@@ -53,6 +53,11 @@ public class BookmarkService {
      *
      * @return 已持久化且回填主键的完整书签对象
      */
+    /** 暴露 FolderService，供命令树组装复用同一服务实例与数据库连接。 */
+    public FolderService getFolderService() {
+        return folderService;
+    }
+
     public Bookmark add(String url, String title, String icon, String category) {
         // 1. 校验所有入参非空且非空串
         requireNonBlank(url, "url");
