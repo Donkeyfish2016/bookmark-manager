@@ -65,7 +65,21 @@ public class EmailService {
         props.put("mail.smtp.host", host);
         props.put("mail.smtp.port", String.valueOf(port));
         props.put("mail.smtp.auth", String.valueOf(auth));
-        props.put("mail.smtp.starttls.enable", String.valueOf(starttls));
+        // props.put("mail.smtp.starttls.enable", String.valueOf(starttls));
+        if (port == 465) {
+            // 使用 SSL 直接加密（QQ 邮箱 465 端口要求）
+            props.put("mail.smtp.ssl.enable", "true");
+            // 下面两行是确保使用 SSL socket 的经典写法，兼容性好
+            props.put("mail.smtp.socketFactory.port", "465");
+            props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+            // 绝不能设置 starttls
+            props.remove("mail.smtp.starttls.enable");
+        } else {
+            // 587 或其他端口使用 STARTTLS
+            props.put("mail.smtp.starttls.enable", String.valueOf(starttls));
+            // 确保关闭 SSL 直连
+            props.put("mail.smtp.ssl.enable", "false");
+        }
 
         Authenticator authenticator = auth ? new Authenticator() {
             @Override

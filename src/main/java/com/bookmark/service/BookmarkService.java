@@ -7,7 +7,6 @@ import com.bookmark.model.BatchResult;
 import com.bookmark.model.Bookmark;
 import com.bookmark.model.Folder;
 import com.bookmark.model.ImportResult;
-import com.bookmark.service.EmailService;
 
 import java.io.File;
 import java.io.IOException;
