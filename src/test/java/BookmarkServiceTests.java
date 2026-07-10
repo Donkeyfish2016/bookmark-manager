@@ -15,6 +15,7 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -44,6 +45,9 @@ class BookmarkServiceTests {
 
     @TempDir
     Path tempDir;
+
+    // 导出测试用的独立分类前缀，避免与既有用例数据相互干扰
+    private static final String EXPORT_CATEGORY = "EXP_TEST";
 
     // 1. 初始化数据库连接与表结构
     @BeforeAll
@@ -429,7 +433,175 @@ class BookmarkServiceTests {
                 "同 URL 不同文件夹应归属不同的 folder_id");
     }
 
+    // ===== 导出场景：树结构 / 边界 / 特殊用例 =====
+
+    /**
+     * 场景：深度嵌套的文件夹层级应被完整导出，且回灌解析后层级关系与原始一致。
+     */
+    @Test
+    void testExportDeeplyNestedHierarchy() throws Exception {
+        // 1. 直接按 parentId 逐级创建 A -> B -> C -> D 四层文件夹（service.add 仅支持单层分类）
+        int idA = folderService.createFolder("A", null);
+        int idB = folderService.createFolder("B", idA);
+        int idC = folderService.createFolder("C", idB);
+        int idD = folderService.createFolder("D", idC);
+
+        // 2. 在最深层 D 中放入一条书签
+        Bookmark leaf = new Bookmark(null, "https://deep-export.com/leaf", "DeepLeaf", "icon.png",
+                "D", LocalDateTime.now(), null, null, idD);
+        dao.insert(leaf);
+
+        // 3. 导出并回灌解析
+        Folder root = exportAndParse("export_deep.html");
+
+        // 4. 层级应逐层保留：ROOT -> A -> B -> C -> D
+        Folder a = findFolderByName(root, "A");
+        Folder b = a != null ? findFolderByName(a, "B") : null;
+        Folder c = b != null ? findFolderByName(b, "C") : null;
+        Folder d = c != null ? findFolderByName(c, "D") : null;
+        assertNotNull(a, "应存在顶层文件夹 A");
+        assertNotNull(b, "应存在二级文件夹 B");
+        assertNotNull(c, "应存在三级文件夹 C");
+        assertNotNull(d, "应存在四级文件夹 D");
+
+        // 5. 最深层书签应归属 D 文件夹
+        assertNotNull(d);
+        assertEquals(1, d.getBookmarks().size());
+        assertEquals("https://deep-export.com/leaf", d.getBookmarks().get(0).getUrl());
+    }
+
+    /**
+     * 场景：空文件夹（无书签、无子文件夹）也应被导出，且不会产生孤立书签。
+     */
+    @Test
+    void testExportEmptyFolder() throws Exception {
+        // 1. 创建一个空文件夹与一个含书签的文件夹
+        folderService.createFolder("EmptyExport", null);
+        service.add("https://with-bm.com/", "WithBm", "icon.png", "EXPFolderWithBm");
+
+        // 2. 导出并回灌解析
+        Folder root = exportAndParse("export_empty.html");
+
+        // 3. 空文件夹应被导出且不带任何书签
+        Folder empty = findFolderByName(root, "EmptyExport");
+        assertNotNull(empty, "空文件夹应在导出结果中存在");
+        assertNotNull(empty);
+        assertTrue(empty.getBookmarks().isEmpty(), "空文件夹不应包含书签");
+    }
+
+    /**
+     * 场景：缺少 ICON 的书签，导出后应省略 ICON 属性，回灌解析后 icon 仍为 null。
+     */
+    @Test
+    void testExportBookmarkMissingIcon() throws Exception {
+        // 1. 直接经 DAO 写入一条 icon 为 null 的书签（service.add 会校验 icon 非空）
+        int folderId = folderService.createFolder("NoIconFolder", null);
+        Bookmark missing = new Bookmark(null, "https://no-icon-export.com/", "NoIconBm", null,
+                "NoIconFolder", LocalDateTime.now(), null, null, folderId);
+        dao.insert(missing);
+
+        // 2. 导出并回灌解析
+        Folder root = exportAndParse("export_noicon.html");
+
+        // 3. 书签 icon 应为 null 而非占位串
+        Folder noIconFolder = findFolderByName(root, "NoIconFolder");
+        assertNotNull(noIconFolder);
+        assertEquals(1, noIconFolder.getBookmarks().size());
+        assertNull(noIconFolder.getBookmarks().get(0).getIcon(), "缺失 ICON 时导出解析后 icon 应为 null");
+    }
+
+    /**
+     * 场景：URL 与标题包含特殊字符（& < > " 及查询参数）时，导出后应正确转义且不丢失信息。
+     */
+    @Test
+    void testExportSpecialCharacters() throws Exception {
+        // 1. 含特殊字符的 URL、标题与文件夹名
+        String url = "https://special-export.com/search?q=1&x=\"y\"&z=<a>";
+        String title = "A&B <C> \"quote\"";
+        service.add(url, title, "icon.png", "A&B <Folder>");
+
+        // 2. 导出并回灌解析
+        Folder root = exportAndParse("export_special.html");
+
+        // 3. 特殊字符应原样保留（解析时 HTML 实体已被还原）
+        Folder specialFolder = findFolderByName(root, "A&B <Folder>");
+        assertNotNull(specialFolder);
+        assertEquals(1, specialFolder.getBookmarks().size());
+        assertEquals(url, specialFolder.getBookmarks().get(0).getUrl(), "URL 中的特殊字符应原样保留");
+        assertEquals(title, specialFolder.getBookmarks().get(0).getTitle(), "标题中的特殊字符应原样保留");
+    }
+
+    /**
+     * 场景：相同 URL 出现在不同文件夹时，导出应分别保留两条记录且归属各自文件夹。
+     */
+    @Test
+    void testExportDuplicateUrlDifferentFolders() throws Exception {
+        // 1. 将同一 URL 分别放入 FolderA 与 FolderB 两个不同文件夹
+        String dupUrl = "https://dup-export.com/";
+        service.add(dupUrl, "A", "icon.png", "ExportFolderA");
+        service.add(dupUrl, "B", "icon.png", "ExportFolderB");
+
+        // 2. 导出并回灌解析
+        Folder root = exportAndParse("export_dup.html");
+
+        // 3. 两个文件夹各含一条同名 URL 书签
+        Folder folderA = findFolderByName(root, "ExportFolderA");
+        Folder folderB = findFolderByName(root, "ExportFolderB");
+        assertNotNull(folderA);
+        assertNotNull(folderB);
+        assertEquals(1, folderA.getBookmarks().size());
+        assertEquals(1, folderB.getBookmarks().size());
+        assertEquals(dupUrl, folderA.getBookmarks().get(0).getUrl());
+        assertEquals(dupUrl, folderB.getBookmarks().get(0).getUrl());
+    }
+
+    /**
+     * 场景：无任何文件夹与书签时，仍应生成可导入浏览器的合法空 HTML 骨架。
+     */
+    @Test
+    void testExportEmptySkeleton() throws Exception {
+        // 1. 测试库已清理，直接导出空状态
+        File out = tempDir.resolve("export_empty_skeleton.html").toFile();
+        int count = service.exportToHtml(out.getPath());
+
+        // 2. 导出书签数为 0，且文件存在、为标准 Netscape 头部开头的合法骨架
+        assertEquals(0, count);
+        assertTrue(out.exists());
+        String content = Files.readString(out.toPath(), StandardCharsets.UTF_8);
+        assertTrue(content.startsWith("<!DOCTYPE NETSCAPE-Bookmark-file-1>"));
+        assertTrue(content.trim().endsWith("</DL><p>"), "空状态也应闭合 </DL> 形成合法骨架");
+
+        // 3. 空骨架可被解析器正常解析（不抛异常）
+        Folder root = new HtmlBookmarkParser().parse(out);
+        assertTrue(root.getBookmarks().isEmpty());
+    }
+
     // ---- 辅助方法 ----
+
+    /** 将全部数据导出为临时 HTML 文件，并回灌解析为文件夹树供断言。 */
+    private Folder exportAndParse(String fileName) throws Exception {
+        File out = tempDir.resolve(fileName).toFile();
+        service.exportToHtml(out.getPath());
+        return new HtmlBookmarkParser().parse(out);
+    }
+
+    /** 在文件夹树中按名称递归查找文件夹，未找到时返回 null。 */
+    private Folder findFolderByName(Folder root, String name) {
+        if (root == null || name == null) {
+            return null;
+        }
+        Folder hit = root.getChildren().get(name);
+        if (hit != null) {
+            return hit;
+        }
+        for (Folder child : root.getChildren().values()) {
+            Folder found = findFolderByName(child, name);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
 
     /** 对 HTML 属性值做必要转义（双引号、&、<、>）。 */
     private String escapeForAttr(String value) {

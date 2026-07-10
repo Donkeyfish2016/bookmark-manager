@@ -222,19 +222,33 @@ public class BookmarkService {
      * @return 导出的书签数量
      */
     public int exportToHtml(String outputPath) {
+        // 1. 校验输出路径非空且非空串
         requireNonBlank(outputPath, "outputPath");
 
-        Folder folderTree = folderService.loadFolderTree();
+        // 2. 加载完整文件夹树（含嵌套文件夹与书签）；
+        //    FolderService.loadFolderTree() 内部通过 FolderDAO 与 BookmarkDAO 拉取全量数据并组装层级
+        Folder rootFolder = folderService.loadFolderTree();
+
+        // 3. 边缘情况：树为空时兜底构造虚拟根，确保仍能写出可被浏览器导入的合法空骨架
+        if (rootFolder == null) {
+            rootFolder = new Folder();
+            rootFolder.setId(0);
+            rootFolder.setName("ROOT");
+            rootFolder.setRoot(true);
+            rootFolder.setChildren(new java.util.LinkedHashMap<>());
+            rootFolder.setBookmarks(new ArrayList<>());
+        }
+
+        // 4. 委托 HtmlBookmarkWriter 写出标准 Netscape 书签 HTML（空树也会生成 <DL></DL> 骨架）
         try {
-            htmlWriter.write(folderTree, new File(outputPath));
+            htmlWriter.write(rootFolder, new File(outputPath));
         } catch (IOException e) {
+            // 4.1 文件 I/O 异常统一包装为运行时异常并保留原始原因，便于上层定位
             throw new RuntimeException("Failed to export bookmarks to: " + outputPath, e);
         }
-        int count = 0;
-        for (Folder child : folderTree.getChildren().values()) {
-            count += countBookmarks(child);
-        }
-        return count;
+
+        // 5. 统计全部导出的书签数量并返回
+        return countBookmarks(rootFolder);
     }
 
     private int countBookmarks(Folder folder) {
