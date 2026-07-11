@@ -62,6 +62,14 @@ public class ShellCommand implements Runnable {
                     break;
                 }
 
+                // 特殊处理 help 命令
+                if (line.equalsIgnoreCase("help") || line.equals("?")) {
+                    cmd.usage(System.out);  // 直接使用已有的 cmd 对象打印帮助
+                    System.out.print("bookmark> ");
+                    System.out.flush();
+                    continue;
+                }
+
                 // 6. 解析为参数数组后执行；异常仅提示，不中断 shell 会话
                 String[] args = splitArgs(line);
                 try {

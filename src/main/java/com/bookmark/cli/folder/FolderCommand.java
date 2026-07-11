@@ -1,5 +1,6 @@
 package com.bookmark.cli.folder;
 
+import com.bookmark.cli.MainCommand;
 import com.bookmark.service.FolderService;
 import picocli.CommandLine;
 
@@ -14,8 +15,9 @@ import java.util.concurrent.Callable;
  * @since 2026-7-9
  */
 @CommandLine.Command(name = "folder",
-        description = "Folder management commands (tree, list, info).",
-        subcommands = {})
+        description = "Folder management commands (tree, list, info, add, delete, move, rename).",
+        subcommands = {}, 
+        mixinStandardHelpOptions = true)
 public class FolderCommand implements Callable<Integer> {
 
     private final FolderService folderService;

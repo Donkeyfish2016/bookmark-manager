@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * @since 2026-7-7
  */
 public class DatabaseMgr {
-    private static final String URL = "jdbc:sqlite:bookmarkmgr.db";
+    private static final String URL_PREFIX = "jdbc:sqlite:";
     private static volatile DatabaseMgr INSTANCE;
     private static volatile Connection CONNECTION;
 
@@ -71,7 +71,10 @@ public class DatabaseMgr {
     @SneakyThrows
     private void openConnection() {
         if (CONNECTION == null || CONNECTION.isClosed()) {
-            CONNECTION = DriverManager.getConnection(URL);
+            String dbPath = System.getenv("BOOKMARK_DB_PATH") != null 
+                ? System.getenv("BOOKMARK_DB_PATH") 
+                : "bookmarkmgr.db";
+            CONNECTION = DriverManager.getConnection(URL_PREFIX + dbPath);
             CONNECTION.setAutoCommit(true);
         }
     }

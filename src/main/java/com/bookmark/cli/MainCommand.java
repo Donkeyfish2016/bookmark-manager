@@ -73,6 +73,13 @@ public class MainCommand implements Callable<Integer> {
     }
 
     /**
+     * 展示帮助信息，静态方法
+     */
+    public static void printUsage() {
+        CommandLine.usage(new MainCommand(null), System.out);
+    }
+
+    /**
      * 未指定子命令时打印帮助信息。
      *
      * @return 进程退出码（0）
