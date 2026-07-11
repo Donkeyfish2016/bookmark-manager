@@ -51,6 +51,7 @@ public class UpdateCommand implements Callable<Integer> {
      */
     @Override
     public Integer call() {
+        // TODO: 从逻辑上看这些可能放业务层更合适一些
         // 1. 读取现有记录；不存在则报错退出
         Bookmark existing = bookmarkService.getById(id);
         if (existing == null) {

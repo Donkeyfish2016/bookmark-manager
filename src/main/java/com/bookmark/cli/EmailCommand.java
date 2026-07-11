@@ -16,7 +16,6 @@ import java.util.concurrent.Callable;
  * @author DonkeyFish
  * @since 2026-7-10
  */
-// TODO: 进行docke部署
 @CommandLine.Command(name = "email", description = "Send all bookmarks as HTML via email.")
 public class EmailCommand implements Callable<Integer> {
 

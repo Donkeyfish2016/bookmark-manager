@@ -78,7 +78,6 @@ public class ShellCommand implements Runnable {
                     System.out.println("Error: " + e.getMessage());
                 }
                 System.out.print("bookmark> ");
-                System.out.flush();
             }
         }
     }

@@ -6,6 +6,7 @@ import picocli.CommandLine;
 
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -38,22 +39,23 @@ public class FolderTreeCommand implements Callable<Integer> {
     public Integer call() {
         // 1. 加载全部文件夹并定位根文件夹（parent_id 为 NULL）
         List<Folder> allFolders = folderService.getAllFolders();
-        Folder root = allFolders.stream()
+        List<Folder> roots = allFolders.stream()
                 .filter(f -> f.getParentId() == null)
-                .findFirst()
-                .orElse(null);
+                .collect(Collectors.toList());
 
         // 2. 无根文件夹时给出提示并退出
-        if (root == null) {
+        if (roots == null) {
             System.out.println("（暂无文件夹）");
             return 0;
         }
 
         // 3. 打印根节点，再递归打印其子节点
-        System.out.println(root.getName() + " (id=" + root.getId() + ", " + directBookmarkCount(root) + " bookmarks)");
-        List<Folder> children = folderService.getSubFolders(root.getId());
-        for (int i = 0; i < children.size(); i++) {
-            printNode(children.get(i), "", i == children.size() - 1);
+        for (Folder root : roots) {
+            System.out.println(root.getName() + " (id=" + root.getId() + ", " + directBookmarkCount(root) + " bookmarks)");
+            List<Folder> children = folderService.getSubFolders(root.getId());
+            for (int i = 0; i < children.size(); i++) {
+                printNode(children.get(i), "", i == children.size() - 1);
+            }
         }
         return 0;
     }

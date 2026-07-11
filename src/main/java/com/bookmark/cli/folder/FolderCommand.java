@@ -1,6 +1,5 @@
 package com.bookmark.cli.folder;
 
-import com.bookmark.cli.MainCommand;
 import com.bookmark.service.FolderService;
 import picocli.CommandLine;
 

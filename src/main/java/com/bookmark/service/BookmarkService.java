@@ -135,7 +135,7 @@ public class BookmarkService {
         requireNonNull(id, "id");
         requireNonBlank(url, "url");
         requireNonBlank(title, "title");
-        // requireNonBlank(icon, "icon");
+        requireNonBlank(icon, "icon");
         requireNonBlank(category, "category");
 
         // 2. 解析分类获取文件夹ID

@@ -3,8 +3,9 @@ services:
     image: bookmark-manager
     container_name: bookmark
     stdin_open: true
-    tty: true
+    # tty: true
     volumes:
       - D:\winter_study\assessment:/data
+      - D:\winter_study\assessment\import_and_export:/tmp/html
     entrypoint: ["java", "--enable-native-access=ALL-UNNAMED", "-jar", "app.jar"]
     command: []
