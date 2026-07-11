@@ -1,0 +1,10 @@
+services:
+  bookmark:
+    image: bookmark-manager
+    container_name: bookmark
+    stdin_open: true
+    tty: true
+    volumes:
+      - D:\winter_study\assessment:/data
+    entrypoint: ["java", "--enable-native-access=ALL-UNNAMED", "-jar", "app.jar"]
+    command: []
