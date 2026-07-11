@@ -14,7 +14,7 @@ import java.util.concurrent.Callable;
  * @author DonkeyFish
  * @since 2026-7-9
  */
-@CommandLine.Command(name = "rename", description = "Rename an existing folder.")
+@CommandLine.Command(name = "rename", description = "Rename an existing folder.", mixinStandardHelpOptions = true)
 public class FolderRenameCommand implements Callable<Integer> {
 
     private final FolderService folderService;

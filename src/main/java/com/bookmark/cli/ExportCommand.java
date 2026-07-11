@@ -16,7 +16,7 @@ import java.util.concurrent.Callable;
  * @author DonkeyFish
  * @since 2026-7-8
  */
-@CommandLine.Command(name = "export", description = "Export all bookmarks to an HTML file.")
+@CommandLine.Command(name = "export", description = "Export all bookmarks to an HTML file.", mixinStandardHelpOptions = true)
 public class ExportCommand implements Callable<Integer> {
 
     private final BookmarkService bookmarkService;

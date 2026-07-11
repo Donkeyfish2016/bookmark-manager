@@ -17,7 +17,7 @@ import java.util.concurrent.Callable;
  * @author DonkeyFish
  * @since 2026-7-7
  */
-@CommandLine.Command(name = "add", description = "Add a new bookmark.")
+@CommandLine.Command(name = "add", description = "Add a new bookmark.", mixinStandardHelpOptions = true)
 public class AddCommand implements Callable<Integer> {
 
     private final BookmarkService bookmarkService;

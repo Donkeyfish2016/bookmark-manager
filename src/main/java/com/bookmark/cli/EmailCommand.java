@@ -16,7 +16,7 @@ import java.util.concurrent.Callable;
  * @author DonkeyFish
  * @since 2026-7-10
  */
-@CommandLine.Command(name = "email", description = "Send all bookmarks as HTML via email.")
+@CommandLine.Command(name = "email", description = "Send all bookmarks as HTML via email.", mixinStandardHelpOptions = true)
 public class EmailCommand implements Callable<Integer> {
 
     private final BookmarkService bookmarkService;

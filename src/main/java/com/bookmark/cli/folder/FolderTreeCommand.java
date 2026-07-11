@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * @author DonkeyFish
  * @since 2026-7-9
  */
-@CommandLine.Command(name = "tree", description = "Display the folder hierarchy as an ASCII tree.")
+@CommandLine.Command(name = "tree", description = "Display the folder hierarchy as an ASCII tree.", mixinStandardHelpOptions = true)
 public class FolderTreeCommand implements Callable<Integer> {
 
     private final FolderService folderService;

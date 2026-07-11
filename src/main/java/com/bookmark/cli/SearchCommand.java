@@ -18,7 +18,7 @@ import java.util.concurrent.Callable;
  * @author DonkeyFish
  * @since 2026-7-7
  */
-@CommandLine.Command(name = "search", description = "Search bookmarks by keyword (matches url and title).")
+@CommandLine.Command(name = "search", description = "Search bookmarks by keyword (matches url and title).", mixinStandardHelpOptions = true)
 public class SearchCommand implements Callable<Integer> {
 
     private final BookmarkService bookmarkService;

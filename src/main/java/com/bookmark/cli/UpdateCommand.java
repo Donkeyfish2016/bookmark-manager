@@ -18,7 +18,7 @@ import java.util.concurrent.Callable;
  * @author DonkeyFish
  * @since 2026-7-7
  */
-@CommandLine.Command(name = "update", description = "Update an existing bookmark.")
+@CommandLine.Command(name = "update", description = "Update an existing bookmark.", mixinStandardHelpOptions = true)
 public class UpdateCommand implements Callable<Integer> {
 
     private final BookmarkService bookmarkService;

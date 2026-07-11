@@ -18,7 +18,7 @@ import java.util.concurrent.Callable;
  * @author DonkeyFish
  * @since 2026-7-7
  */
-@CommandLine.Command(name = "list", description = "List bookmarks (optionally filtered by category, paginated).")
+@CommandLine.Command(name = "list", description = "List bookmarks (optionally filtered by category, paginated).", mixinStandardHelpOptions = true)
 public class ListCommand implements Callable<Integer> {
 
     private final BookmarkService bookmarkService;

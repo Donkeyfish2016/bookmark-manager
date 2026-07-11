@@ -17,7 +17,7 @@ import java.util.concurrent.Callable;
  * @author DonkeyFish
  * @since 2026-7-9
  */
-@CommandLine.Command(name = "delete", description = "Delete an existing folder.")
+@CommandLine.Command(name = "delete", description = "Delete an existing folder.", mixinStandardHelpOptions = true)
 public class FolderDeleteCommand implements Callable<Integer> {
 
     private final FolderService folderService;

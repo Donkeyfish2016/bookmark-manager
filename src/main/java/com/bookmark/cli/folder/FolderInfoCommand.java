@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * @author DonkeyFish
  * @since 2026-7-9
  */
-@CommandLine.Command(name = "info", description = "Show detailed metadata for a folder.")
+@CommandLine.Command(name = "info", description = "Show detailed metadata for a folder.", mixinStandardHelpOptions = true)
 public class FolderInfoCommand implements Callable<Integer> {
 
     /** 时间字段显示格式，与 DAO 中存储格式保持一致。 */

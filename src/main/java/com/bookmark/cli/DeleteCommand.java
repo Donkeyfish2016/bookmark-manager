@@ -16,7 +16,7 @@ import java.util.concurrent.Callable;
  * @author DonkeyFish
  * @since 2026-7-7
  */
-@CommandLine.Command(name = "delete", description = "Delete a bookmark by id.")
+@CommandLine.Command(name = "delete", description = "Delete a bookmark by id.", mixinStandardHelpOptions = true)
 public class DeleteCommand implements Callable<Integer> {
 
     private final BookmarkService bookmarkService;

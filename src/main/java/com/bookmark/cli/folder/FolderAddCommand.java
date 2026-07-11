@@ -18,7 +18,7 @@ import java.util.concurrent.Callable;
  * @author DonkeyFish
  * @since 2026-7-9
  */
-@CommandLine.Command(name = "add", description = "Create a new folder.")
+@CommandLine.Command(name = "add", description = "Create a new folder.", mixinStandardHelpOptions = true)
 public class FolderAddCommand implements Callable<Integer> {
 
     /** 根文件夹的默认名称（收藏夹栏）。 */

@@ -17,7 +17,7 @@ import java.util.concurrent.Callable;
  * @author DonkeyFish
  * @since 2026-7-8
  */
-@CommandLine.Command(name = "import", description = "Import bookmarks from an Edge bookmark HTML file.")
+@CommandLine.Command(name = "import", description = "Import bookmarks from an Edge bookmark HTML file.", mixinStandardHelpOptions = true)
 public class ImportCommand implements Callable<Integer> {
 
     private final BookmarkService bookmarkService;

@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * @author DonkeyFish
  * @since 2026-7-9
  */
-@CommandLine.Command(name = "list", description = "List immediate subfolders of a parent folder in a table.")
+@CommandLine.Command(name = "list", description = "List immediate subfolders of a parent folder in a table.", mixinStandardHelpOptions = true)
 public class FolderListCommand implements Callable<Integer> {
 
     /** 时间字段显示格式，与 DAO 中存储格式保持一致。 */

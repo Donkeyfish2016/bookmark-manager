@@ -18,7 +18,7 @@ import java.util.concurrent.Callable;
  * @author DonkeyFish
  * @since 2026-7-9
  */
-@CommandLine.Command(name = "move", description = "Move a folder to a different parent folder.")
+@CommandLine.Command(name = "move", description = "Move a folder to a different parent folder.", mixinStandardHelpOptions = true)
 public class FolderMoveCommand implements Callable<Integer> {
 
     private final FolderService folderService;
